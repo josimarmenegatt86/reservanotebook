@@ -1472,8 +1472,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateQtyHint();
   renderSituacao();
 
-  // Atualiza disponibilidade a cada 60 segundos
+  // Atualiza disponibilidade a cada 30 segundos
   setInterval(() => {
     fetchAll(true).then(() => renderSituacao());
-  }, 60_000);
+  }, 30_000);
 });
