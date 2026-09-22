@@ -9,7 +9,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwO1eIuR4bM0_POUsBBXXO3
 const MAX_NB      = 35;
 const STORE_KEY   = 'reserva_nb_v2'; // v2 = nova estrutura de slots (datetime range)
 const NOMES_KEY   = 'reserva_nb_nomes';
-const UNITS       = ['Videira 1', 'Videira 2'];
+const UNITS       = ['Videira1', 'Videira2'];
 
 // ─── CACHE ──────────────────────────────────────────────
 let _cache = null, _cacheTime = 0;
