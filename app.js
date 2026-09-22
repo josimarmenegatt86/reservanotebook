@@ -9,7 +9,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwO1eIuR4bM0_POUsBBXXO3
 const MAX_NB      = 35;
 const STORE_KEY   = 'reserva_nb_v2'; // v2 = nova estrutura de slots (datetime range)
 const NOMES_KEY   = 'reserva_nb_nomes';
-const UNITS       = ['Videira'];
+const UNITS       = ['Videira 1', 'Videira 2'];
 
 // ─── CACHE ──────────────────────────────────────────────
 let _cache = null, _cacheTime = 0;
@@ -188,7 +188,7 @@ function findNearbyDates(unidade, slot, quantidade, maxResults = 3) {
   const duration = devEnd - retStart;
 
   const suggestions = [];
-  for (let i = 1; i <= 30 && suggestions.length < maxResults; i++) {
+  for (let i = 1; i <= 35 && suggestions.length < maxResults; i++) {
     const candidate = new Date(retStart);
     candidate.setDate(candidate.getDate() + i);
     if (candidate.getDay() === 0 || candidate.getDay() === 6) continue;
@@ -835,7 +835,7 @@ async function renderConsulta() {
 
       return `<tr>
         <td class="avail-date"><strong>${dy}/${pad(month)}/${String(year).slice(-2)}</strong><small>${dayNameShort(d)}.</small></td>
-        <td><span class="avail-badge ${cls}">${disp}/30</span></td>
+        <td><span class="avail-badge ${cls}">${disp}/35</span></td>
         <td class="avail-slots-cell">${slotsHtml}</td>
       </tr>`;
     }).join('');
@@ -855,7 +855,7 @@ async function renderConsulta() {
       const [,, dy] = d.split('-');
       const cells   = UNITS.map(u => {
         const disp = Math.max(0, avail(u, d));
-        return `<td><span class="avail-badge ${badgeCls(disp)}">${disp}/30</span></td>`;
+        return `<td><span class="avail-badge ${badgeCls(disp)}">${disp}/35</span></td>`;
       }).join('');
       return `<tr>
         <td class="avail-date"><strong>${dy}/${pad(month)}/${String(year).slice(-2)}</strong><small>${dayNameShort(d)}.</small></td>
