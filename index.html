@@ -68,19 +68,20 @@
             </div>
 
             <div class="field-wrap" id="wrap-matricula">
-              <label for="matricula">Matrícula</label>
-              <input type="text" id="matricula" placeholder="Número da sua matrícula" inputmode="numeric">
-              <div class="error-text" id="err-matricula">Informe sua matrícula.</div>
+              <label for="matricula">CPf</label>
+              <input type="text" id="matricula" placeholder="Número da seu CPF" inputmode="numeric">
+              <div class="error-text" id="err-matricula">Informe CPF.</div>
             </div>
 
             <div class="field-wrap" id="wrap-unidade">
-              <label for="unidade">Unidade</label>
+              <label for="unidade">Carrinho</label>
               <select id="unidade">
-                <option value="">Selecione a unidade</option>
-                <option value="Videira">Videira</option>
+                <option value="">Selecione a Carrinho</option>
+                <option value="Videira1">Carrinho 1</option>
+                <option value="Videira2">Carrinho 2</option>
 
               </select>
-              <div class="error-text" id="err-unidade">Selecione a unidade.</div>
+              <div class="error-text" id="err-unidade">Selecione a Carrinho.</div>
             </div>
 
             <div class="field-wrap" id="wrap-quantidade">
@@ -90,7 +91,7 @@
                 <input type="number" id="quantidade" value="1" min="1" max="35" aria-live="polite">
                 <button type="button" class="qty-btn" id="qty-plus" aria-label="Aumentar quantidade">+</button>
               </div>
-              <div class="qty-hint" id="qty-hint">Selecione a unidade e adicione um período para ver disponibilidade</div>
+              <div class="qty-hint" id="qty-hint">Selecione o Carrinho e adicione um período para ver disponibilidade</div>
               <div class="error-text" id="err-quantidade">Quantidade inválida (mínimo 1).</div>
             </div>
 
@@ -177,7 +178,7 @@
           <div class="card-body">
             <div class="info-grid">
               <div>
-                <div class="info-lbl">Unidade</div>
+                <div class="info-lbl">Carrinho</div>
                 <div class="info-val" id="conf-unidade"></div>
               </div>
               <div>
@@ -228,10 +229,11 @@
         <p class="search-sub">Verifique datas e horários disponíveis. Filtre por horário para consultar uma janela específica.</p>
 
         <div class="field-wrap">
-          <label for="cons-unidade">Unidade</label>
+          <label for="cons-unidade">Carrinho</label>
           <select id="cons-unidade">
-            <option value="">Todas as unidades</option>
-            <option value="Videira">Videira</option>
+            <option value="">Todas as Carrinho</option>
+            <option value="Videira1">Videira 1</option>
+            <option value="Videira2">Videira 2</option>
  
           </select>
         </div>
@@ -298,10 +300,11 @@
           </div>
 
           <div class="field-wrap" style="margin-top:18px">
-            <label for="exp-unidade">Unidade</label>
+            <label for="exp-unidade">Carrinho</label>
             <select id="exp-unidade">
-              <option value="">Todas as unidades</option>
-              <option value="Videira">Videira</option>
+              <option value="">Todas as Carrinho</option>
+              <option value="Videira1">Carrinho 1</option>
+              <option value="Videira2">Carrinho 2</option>
             </select>
           </div>
 
@@ -338,10 +341,11 @@
           </div>
 
           <div class="field-wrap">
-            <label for="ger-unidade">Unidade</label>
+            <label for="ger-unidade">Carrinho</label>
             <select id="ger-unidade">
-              <option value="">Todas as unidades</option>
-              <option value="Videira">Videira</option>
+              <option value="">Todas as Carrinho</option>
+              <option value="Videira1">Carrinho 1</option>
+              <option value="Videira2">Carrinho 2</option>
             </select>
           </div>
 
@@ -386,7 +390,7 @@
             <label for="modal-quantidade">Quantidade de Notebooks</label>
             <div class="qty-wrap">
               <button type="button" class="qty-btn" id="modal-qty-minus" aria-label="Diminuir">−</button>
-              <input type="number" id="modal-quantidade" value="1" min="1" max="30" aria-live="polite">
+              <input type="number" id="modal-quantidade" value="1" min="1" max="35" aria-live="polite">
               <button type="button" class="qty-btn" id="modal-qty-plus" aria-label="Aumentar">+</button>
             </div>
           </div>
