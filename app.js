@@ -6,7 +6,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwO1eIuR4bM0_POUsBBXXO3l3zoB8vgS-XYuAdMZ4VWE8-6m5OeScxhHUzOFd10bP40/exec';
 
 
-const MAX_NB      = 30;
+const MAX_NB      = 35;
 const STORE_KEY   = 'reserva_nb_v2'; // v2 = nova estrutura de slots (datetime range)
 const NOMES_KEY   = 'reserva_nb_nomes';
 const UNITS       = ['Videira'];
