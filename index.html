@@ -11,8 +11,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- ══ HEADER ══ -->
   <header class="header">
     <div class="header-inner">
       <div class="logo-wrap">
@@ -20,12 +18,10 @@
       </div>
       <div class="header-text">
         <h1>Reserva de Notebooks</h1>
-        <p>SENAI Santa Catarina</p>
+        <p>SENAI Santa Catarina · Unidade Videira</p>
       </div>
     </div>
   </header>
-
-  <!-- ══ NAVIGATION ══ -->
   <nav class="nav-tabs" role="tablist" aria-label="Navegação principal">
     <button class="tab-btn active" data-tab="reservar" role="tab" aria-selected="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -40,15 +36,8 @@
       Exportar
     </button>
   </nav>
-
-  <!-- ══ MAIN ══ -->
   <main class="main">
-
-    <!-- ═══════════════════════════
-         TAB: RESERVAR
-    ════════════════════════════ -->
     <section id="tab-reservar" class="tab-content active" role="tabpanel">
-
       <div id="form-section">
         <div class="search-card">
           <div class="search-eyebrow">
@@ -57,45 +46,37 @@
           </div>
           <h2>Reservar Notebooks</h2>
           <p class="search-sub">Preencha todos os campos para realizar sua reserva.</p>
-
           <form id="form-reserva" novalidate autocomplete="off">
-
             <div class="field-wrap" id="wrap-nome">
               <label for="nome">Nome Completo</label>
               <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name" list="nomes-list">
               <datalist id="nomes-list"></datalist>
               <div class="error-text" id="err-nome">Informe seu nome completo.</div>
             </div>
-
-            <div class="field-wrap" id="wrap-matricula">
-              <label for="matricula">CPf</label>
-              <input type="text" id="matricula" placeholder="Número da seu CPF" inputmode="numeric">
-              <div class="error-text" id="err-matricula">Informe CPF.</div>
+            <div class="field-wrap" id="wrap-cpf">
+              <label for="cpf">CPF</label>
+              <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+              <div class="error-text" id="err-cpf">Informe seu CPF.</div>
             </div>
-
             <div class="field-wrap" id="wrap-unidade">
               <label for="unidade">Carrinho</label>
               <select id="unidade">
-                <option value="">Selecione a Carrinho</option>
-                <option value="Videira1">Carrinho 1</option>
-                <option value="Videira2">Carrinho 2</option>
-
+                <option value="">Selecione o carrinho</option>
+                <option value="Carrinho 1">Carrinho 1</option>
+                <option value="Carrinho 2">Carrinho 2</option>
               </select>
-              <div class="error-text" id="err-unidade">Selecione a Carrinho.</div>
+              <div class="error-text" id="err-unidade">Selecione o carrinho.</div>
             </div>
-
             <div class="field-wrap" id="wrap-quantidade">
               <label for="quantidade">Quantidade de Notebooks</label>
               <div class="qty-wrap">
                 <button type="button" class="qty-btn" id="qty-minus" aria-label="Diminuir quantidade">−</button>
-                <input type="number" id="quantidade" value="1" min="1" max="35" aria-live="polite">
+                <input type="number" id="quantidade" value="1" min="1" max="30" aria-live="polite">
                 <button type="button" class="qty-btn" id="qty-plus" aria-label="Aumentar quantidade">+</button>
               </div>
-              <div class="qty-hint" id="qty-hint">Selecione o Carrinho e adicione um período para ver disponibilidade</div>
+              <div class="qty-hint" id="qty-hint">Selecione o carrinho e adicione um período para ver disponibilidade</div>
               <div class="error-text" id="err-quantidade">Quantidade inválida (mínimo 1).</div>
             </div>
-
-            <!-- Períodos de Reserva: retirada → devolução -->
             <div class="field-wrap" id="wrap-slots">
               <label>Períodos de Reserva <span class="label-opcional">(retirada → devolução)</span></label>
               <div id="slot-list"></div>
@@ -109,8 +90,6 @@
                   Repetir por período
                 </button>
               </div>
-
-              <!-- Gerador de períodos recorrentes: repete em dias da semana escolhidos até uma data-fim -->
               <div id="recorrente-panel" class="recorrente-panel" hidden>
                 <div class="field-row">
                   <div class="field-wrap">
@@ -149,29 +128,23 @@
                 </button>
                 <div class="rec-hint" id="rec-hint"></div>
               </div>
-
               <div class="error-text" id="err-slots">Adicione pelo menos um período de reserva.</div>
             </div>
-
             <button type="submit" class="btn-buscar" id="btn-reservar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Confirmar Reserva
             </button>
           </form>
-
-          <!-- Sugestão de datas próximas (mostrado quando há conflito) -->
           <div id="suggestion-box" class="suggestion-box" hidden></div>
         </div>
       </div>
-
-      <!-- Tela de confirmação -->
       <div id="confirmacao" hidden>
         <div class="result-card">
           <div class="card-top">
             <div class="avatar" id="conf-avatar"></div>
             <div class="card-name-block">
               <div class="card-name" id="conf-nome"></div>
-              <div class="card-name-sub" id="conf-matricula"></div>
+              <div class="card-name-sub" id="conf-cpf"></div>
             </div>
             <span class="status-pill status-confirmado">Confirmado</span>
           </div>
@@ -198,8 +171,6 @@
           Nova Reserva
         </button>
       </div>
-
-      <!-- Disponibilidade Agora — sempre visível na primeira página -->
       <div class="situacao-home-wrap">
         <div class="situacao-home-header">
           <div class="search-eyebrow" style="margin-bottom:0">
@@ -215,10 +186,6 @@
         <div id="situacao-cards" class="situacao-grid" aria-live="polite"></div>
       </div>
     </section>
-
-    <!-- ═══════════════════════════
-         TAB: CONSULTAR
-    ════════════════════════════ -->
     <section id="tab-consultar" class="tab-content" hidden role="tabpanel">
       <div class="search-card">
         <div class="search-eyebrow">
@@ -227,22 +194,18 @@
         </div>
         <h2>Consultar Disponibilidade</h2>
         <p class="search-sub">Verifique datas e horários disponíveis. Filtre por horário para consultar uma janela específica.</p>
-
         <div class="field-wrap">
           <label for="cons-unidade">Carrinho</label>
           <select id="cons-unidade">
-            <option value="">Todas as Carrinho</option>
-            <option value="Videira1">Videira 1</option>
-            <option value="Videira2">Videira 2</option>
- 
+            <option value="">Todos os carrinhos</option>
+            <option value="Carrinho 1">Carrinho 1</option>
+            <option value="Carrinho 2">Carrinho 2</option>
           </select>
         </div>
-
         <div class="field-wrap">
           <label for="cons-mes">Mês de Referência</label>
           <input type="month" id="cons-mes">
         </div>
-
         <div class="field-row">
           <div class="field-wrap">
             <label for="cons-hora-ret">Horário de retirada <span class="label-opcional">(opcional)</span></label>
@@ -253,7 +216,6 @@
             <input type="time" id="cons-hora-dev" min="08:00" max="23:00">
           </div>
         </div>
-
         <button class="btn-buscar" id="btn-consultar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           Consultar
@@ -261,10 +223,6 @@
       </div>
       <div id="consulta-resultado" aria-live="polite"></div>
     </section>
-
-    <!-- ═══════════════════════════
-         TAB: EXPORTAR
-    ════════════════════════════ -->
     <section id="tab-exportar" class="tab-content" hidden role="tabpanel">
       <div class="search-card">
         <div class="search-eyebrow">
@@ -273,8 +231,6 @@
         </div>
         <h2>Exportar Reservas</h2>
         <p class="search-sub">Informe a senha para acessar o relatório completo de reservas.</p>
-
-        <!-- Tela de senha -->
         <div id="export-lock">
           <div class="field-wrap">
             <label for="exp-senha">Senha de Acesso</label>
@@ -291,23 +247,19 @@
             Acessar
           </button>
         </div>
-
-        <!-- Formulário de exportação -->
         <div id="export-form" hidden>
           <div class="success-banner" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Acesso autorizado
           </div>
-
           <div class="field-wrap" style="margin-top:18px">
             <label for="exp-unidade">Carrinho</label>
             <select id="exp-unidade">
-              <option value="">Todas as Carrinho</option>
-              <option value="Videira1">Carrinho 1</option>
-              <option value="Videira2">Carrinho 2</option>
+              <option value="">Todos os carrinhos</option>
+              <option value="Carrinho 1">Carrinho 1</option>
+              <option value="Carrinho 2">Carrinho 2</option>
             </select>
           </div>
-
           <div class="field-row">
             <div class="field-wrap">
               <label for="exp-inicio">Data Início</label>
@@ -318,37 +270,30 @@
               <input type="date" id="exp-fim">
             </div>
           </div>
-
           <button class="btn-buscar" id="btn-exportar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar CSV
           </button>
-
           <button class="btn-novo" id="btn-sair-export" style="margin-top:12px;width:100%;text-align:center;display:block;padding:12px 22px">
             Sair da área restrita
           </button>
-
-          <!-- ── Gerenciar Reservas ── -->
           <div class="mgmt-divider"></div>
           <div class="search-eyebrow" style="margin:0 0 14px">
             <span class="eyebrow-bar"></span>
             <span>Gerenciar Reservas</span>
           </div>
-
           <div class="field-wrap">
             <label for="ger-nome">Nome do Professor</label>
             <input type="text" id="ger-nome" placeholder="Buscar por nome…" autocomplete="off">
           </div>
-
           <div class="field-wrap">
             <label for="ger-unidade">Carrinho</label>
             <select id="ger-unidade">
-              <option value="">Todas as Carrinho</option>
-              <option value="Videira1">Carrinho 1</option>
-              <option value="Videira2">Carrinho 2</option>
+              <option value="">Todos os carrinhos</option>
+              <option value="Carrinho 1">Carrinho 1</option>
+              <option value="Carrinho 2">Carrinho 2</option>
             </select>
           </div>
-
           <div class="field-row">
             <div class="field-wrap">
               <label for="ger-inicio">Data Início <span class="label-opcional">(opcional)</span></label>
@@ -359,18 +304,14 @@
               <input type="date" id="ger-fim">
             </div>
           </div>
-
           <button class="btn-buscar" id="btn-gerenciar" style="background:var(--orange);box-shadow:0 6px 24px rgba(244,121,32,0.3);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             Buscar Reservas
           </button>
-
           <div id="ger-resultado" aria-live="polite"></div>
         </div>
       </div>
     </section>
-
-    <!-- ══ MODAL: EDITAR RESERVA ══ -->
     <div id="modal-edicao" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-label="Editar reserva">
       <div class="modal-card">
         <div class="modal-header">
@@ -385,16 +326,14 @@
               <div id="modal-unidade" style="font-size:12px;color:var(--gray-60);margin-top:2px;font-weight:600"></div>
             </div>
           </div>
-
           <div class="field-wrap" style="margin-top:16px">
             <label for="modal-quantidade">Quantidade de Notebooks</label>
             <div class="qty-wrap">
               <button type="button" class="qty-btn" id="modal-qty-minus" aria-label="Diminuir">−</button>
-              <input type="number" id="modal-quantidade" value="1" min="1" max="35" aria-live="polite">
+              <input type="number" id="modal-quantidade" value="1" min="1" max="30" aria-live="polite">
               <button type="button" class="qty-btn" id="modal-qty-plus" aria-label="Aumentar">+</button>
             </div>
           </div>
-
           <div class="field-wrap">
             <label>Períodos <span class="label-opcional">(retirada → devolução)</span></label>
             <div id="modal-slot-list"></div>
@@ -413,18 +352,12 @@
         </div>
       </div>
     </div>
-
   </main>
-
-  <!-- ══ FOOTER ══ -->
   <footer class="footer">
     <img src="Logo-S.png" alt="SENAI" class="footer-logo">
     SENAI Santa Catarina &nbsp;·&nbsp; Sistema de Reserva de Notebooks
   </footer>
-
-  <!-- Toast de notificação -->
   <div id="toast" class="toast" role="status" aria-live="assertive" aria-atomic="true"></div>
-
   <script src="app.js"></script>
 </body>
 </html>

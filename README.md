@@ -8,8 +8,9 @@ Sistema web de reserva de notebooks para as unidades do SENAI SC. Permite que in
 
 | Unidade | Notebooks disponíveis |
 |---|---|
-| Videira | 35 |
-
+| Correia Pinto | 30 |
+| Lages | 30 |
+| Otacílio Costa | 30 |
 
 ---
 
