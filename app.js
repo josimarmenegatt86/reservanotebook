@@ -1,5 +1,6 @@
 'use strict';
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvnP6CVA2zAbAmvniq6_uQpA2DRdC9Q4d_4_PAWuZjwldr-31cQ5LlMnHBPhQiA5rdpA/exec';
+
 const MAX_NB = 35;
 const STORE_KEY = 'reserva_nb_v2';
 const NOMES_KEY = 'reserva_nb_nomes';
@@ -228,6 +229,18 @@ function _atualizarDatalist() {
   const nomes = JSON.parse(localStorage.getItem(NOMES_KEY) || '[]');
   const datalist = document.getElementById('nomes-list');
   if (!datalist) return;
+  datalist.innerHTML = nomes
+    .map(n => `<option value="${n.replace(/"/g, '&quot;')}">`)
+    .join('');
+}
+
+// Sugestões de professores já cadastrados na planilha (qualquer status)
+function _atualizarDatalistProfessores() {
+  const datalist = document.getElementById('prof-nomes-list');
+  if (!datalist) return;
+  const nomes = [...new Set(
+    getAll().map(r => r.nome).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   datalist.innerHTML = nomes
     .map(n => `<option value="${n.replace(/"/g, '&quot;')}">`)
     .join('');
@@ -873,211 +886,31 @@ async function renderSituacao() {
   }
 }
 
-let _adminSenha = null;
-function initExportar() {
-  const expSenha = document.getElementById('exp-senha');
-  document.getElementById('btn-eye').addEventListener('click', () => {
-    expSenha.type = expSenha.type === 'password' ? 'text' : 'password';
-  });
-  expSenha.addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('btn-verificar-senha').click();
-  });
-  document.getElementById('btn-verificar-senha').addEventListener('click', async () => {
-    const senha = expSenha.value;
-    if (!senha) return;
-    if (!API_URL) {
-      toast('API não configurada. Autenticação indisponível.', 'error');
-      return;
-    }
-    const btn = document.getElementById('btn-verificar-senha');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-btn"></span> Verificando…`;
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'verificarSenha', senha }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        toast(data.error, 'error');
-      } else if (data.ok) {
-        _adminSenha = senha;
-        document.getElementById('export-lock').hidden = true;
-        document.getElementById('export-form').hidden = false;
-        document.getElementById('senha-error').hidden = true;
-      } else {
-        document.getElementById('senha-error').hidden = false;
-        expSenha.focus();
-      }
-    } catch {
-      toast('Erro ao verificar senha. Verifique a conexão.', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Acessar`;
-    }
-  });
-  document.getElementById('btn-exportar').addEventListener('click', exportCSV);
-  document.getElementById('btn-sair-export').addEventListener('click', () => {
-    document.getElementById('export-lock').hidden = false;
-    document.getElementById('export-form').hidden = true;
-    expSenha.value = '';
-    _adminSenha = null;
-    document.getElementById('ger-resultado').innerHTML = '';
-    fecharModal();
-  });
+function initConsultaProfessor() {
+  document.getElementById('btn-consulta-professor').addEventListener('click', renderConsultaProfessor);
 }
 
-async function exportCSV() {
-  const btn = document.getElementById('btn-exportar');
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner-btn"></span> Exportando…`;
-  await fetchAll(true);
-  const carrinho = document.getElementById('exp-unidade').value;
-  const inicio = document.getElementById('exp-inicio').value;
-  const fim = document.getElementById('exp-fim').value;
-  let data = getAll().filter(r => !carrinho || r.unidade === carrinho);
-  if (inicio || fim) {
-    data = data.filter(r =>
-      r.slots.some(s => {
-        const d = s.retirada.slice(0, 10);
-        return (!inicio || d >= inicio) && (!fim || d <= fim);
-      })
-    );
-  }
-  const btnLabel = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar CSV`;
-  if (!data.length) {
-    toast('Nenhuma reserva encontrada com os filtros aplicados.', 'warn');
-    btn.disabled = false;
-    btn.innerHTML = btnLabel;
-    return;
-  }
-  const header = ['ID','Nome','CPF','Carrinho','Quantidade',
-    'Data Retirada','Hora Retirada','Data Devolução','Hora Devolução','Status','Criado Em'];
-  const lines = [header.join(',')];
-  data.forEach(r => {
-    r.slots.forEach(s => {
-      lines.push([
-        r.id, r.nome, r.cpf, r.unidade, r.quantidade,
-        fmtDateShort(s.retirada), fmtTime(s.retirada),
-        fmtDateShort(s.devolucao), fmtTime(s.devolucao),
-        r.status, fmtDateTimeFull(r.criadoEm),
-      ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','));
-    });
-  });
-  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: `reservas_${todayISO()}.csv` });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast(`${data.length} reserva(s) exportada(s).`, 'success');
-  btn.disabled = false;
-  btn.innerHTML = btnLabel;
-}
-
-let _editId = null;
-let _modalSlotCounter = 0;
-async function cancelarReservaAPI(id) {
-  if (!API_URL) {
-    const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    const idx = list.findIndex(r => r.id === id);
-    if (idx >= 0) {
-      list[idx].status = 'cancelada';
-      list[idx].devolvidoEm = new Date().toISOString();
-      localStorage.setItem(STORE_KEY, JSON.stringify(list));
-      _cache = list;
-      _cacheTime = Date.now();
-    }
-    return { ok: true };
-  }
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'cancelar', id, senha: _adminSenha }),
-  });
-  const data = await res.json();
-  if (data.error && /senha/i.test(data.error)) _voltarParaLogin();
-  return data;
-}
-
-async function editarReservaAPI(id, dados) {
-  if (!API_URL) {
-    const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    const idx = list.findIndex(r => r.id === id);
-    if (idx >= 0) {
-      list[idx].quantidade = dados.quantidade;
-      list[idx].slots = dados.slots;
-      localStorage.setItem(STORE_KEY, JSON.stringify(list));
-      _cache = list;
-      _cacheTime = Date.now();
-    }
-    return { ok: true };
-  }
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'editar', id, dados, senha: _adminSenha }),
-  });
-  const data = await res.json();
-  if (data.error && /senha/i.test(data.error)) _voltarParaLogin();
-  return data;
-}
-
-function _voltarParaLogin() {
-  _adminSenha = null;
-  fecharModal();
-  document.getElementById('export-lock').hidden = false;
-  document.getElementById('export-form').hidden = true;
-  document.getElementById('exp-senha').value = '';
-  document.getElementById('ger-resultado').innerHTML = '';
-}
-
-function initGerenciar() {
-  document.getElementById('btn-gerenciar').addEventListener('click', renderGerenciar);
-  const qtyInput = document.getElementById('modal-quantidade');
-  document.getElementById('modal-qty-minus').addEventListener('click', () => {
-    const v = parseInt(qtyInput.value) || 1;
-    if (v > 1) qtyInput.value = v - 1;
-  });
-  document.getElementById('modal-qty-plus').addEventListener('click', () => {
-    const v = parseInt(qtyInput.value) || 1;
-    if (v < MAX_NB) qtyInput.value = v + 1;
-  });
-  qtyInput.addEventListener('input', () => {
-    let v = parseInt(qtyInput.value);
-    if (isNaN(v) || v < 1) qtyInput.value = 1;
-    if (v > MAX_NB) qtyInput.value = MAX_NB;
-  });
-  document.getElementById('modal-btn-add-slot').addEventListener('click', () => addModalSlotRow());
-  document.getElementById('modal-fechar').addEventListener('click', fecharModal);
-  document.getElementById('modal-cancelar').addEventListener('click', fecharModal);
-  document.getElementById('modal-edicao').addEventListener('click', e => {
-    if (e.target === e.currentTarget) fecharModal();
-  });
-  document.getElementById('modal-salvar').addEventListener('click', salvarEdicao);
-}
-
-function _gerBtnLabel() {
+function _consultaProfessorLabel() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Buscar Reservas`;
 }
 
-function _salvarLabel() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" aria-hidden="true"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar Alterações`;
-}
-
-async function renderGerenciar() {
-  const btn = document.getElementById('btn-gerenciar');
+async function renderConsultaProfessor() {
+  const btn = document.getElementById('btn-consulta-professor');
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner-btn"></span> Buscando…`;
   await fetchAll(true);
-  const carrinho = document.getElementById('ger-unidade').value;
-  const inicio = document.getElementById('ger-inicio').value;
-  const fim = document.getElementById('ger-fim').value;
-  const nome = document.getElementById('ger-nome').value.trim().toLowerCase();
-  let reservas = getAll().filter(r => r.status === 'ativa');
-  if (nome) reservas = reservas.filter(r => r.nome.toLowerCase().includes(nome));
+  _atualizarDatalistProfessores();
+  const nome = document.getElementById('prof-nome').value.trim().toLowerCase();
+  const carrinho = document.getElementById('prof-unidade').value;
+  const inicio = document.getElementById('prof-inicio').value;
+  const fim = document.getElementById('prof-fim').value;
+  if (!nome) {
+    toast('Digite o nome do professor.', 'warn');
+    btn.disabled = false;
+    btn.innerHTML = _consultaProfessorLabel();
+    return;
+  }
+  let reservas = getAll().filter(r => r.nome.toLowerCase().includes(nome));
   if (carrinho) reservas = reservas.filter(r => r.unidade === carrinho);
   if (inicio || fim) {
     reservas = reservas.filter(r =>
@@ -1092,23 +925,20 @@ async function renderGerenciar() {
     const db = b.slots[0]?.retirada || '';
     return da < db ? -1 : da > db ? 1 : 0;
   });
-  const container = document.getElementById('ger-resultado');
+  const container = document.getElementById('consulta-professor-resultado');
   if (!reservas.length) {
-    container.innerHTML = `<p style="text-align:center;padding:20px 0;color:var(--gray-40);font-size:13px;font-weight:600">Nenhuma reserva ativa encontrada.</p>`;
+    container.innerHTML = `<p style="text-align:center;padding:20px 0;color:var(--gray-40);font-size:13px;font-weight:600">Nenhuma reserva encontrada para este professor.</p>`;
   } else {
-    container.innerHTML = `<div class="ger-list">${reservas.map(gerItemHTML).join('')}</div>`;
-    container.querySelectorAll('.btn-ger-cancel').forEach(b =>
-      b.addEventListener('click', () => handleCancelar(b.dataset.id))
-    );
-    container.querySelectorAll('.btn-ger-edit').forEach(b =>
-      b.addEventListener('click', () => abrirModal(b.dataset.id))
-    );
+    container.innerHTML = `<div class="search-card" style="padding-top:20px">
+      <div class="search-eyebrow"><span class="eyebrow-bar"></span><span>${reservas.length} reserva(s) encontrada(s)</span></div>
+      <div class="ger-list">${reservas.map(profItemHTML).join('')}</div>
+    </div>`;
   }
   btn.disabled = false;
-  btn.innerHTML = _gerBtnLabel();
+  btn.innerHTML = _consultaProfessorLabel();
 }
 
-function gerItemHTML(r) {
+function profItemHTML(r) {
   const slotsHtml = r.slots.map(s =>
     `<span class="slot-time-badge">${fmtDatetime(s.retirada)} → ${fmtTime(s.devolucao)}h</span>`
   ).join('');
@@ -1118,141 +948,17 @@ function gerItemHTML(r) {
       <div class="ger-item-meta">${r.unidade} &middot; CPF ${maskCPF(r.cpf)} &middot; ${r.quantidade} notebook${r.quantidade !== 1 ? 's' : ''}</div>
       <div class="ger-item-slots">${slotsHtml}</div>
     </div>
-    <div class="ger-item-actions">
-      <button class="btn-ger btn-ger-edit" data-id="${r.id}">Editar</button>
-      <button class="btn-ger btn-ger-cancel" data-id="${r.id}">Cancelar</button>
-    </div>
+    <div class="ger-item-actions">${statusBadge(r.status)}</div>
   </div>`;
 }
 
-async function handleCancelar(id) {
-  if (!confirm('Confirmar cancelamento desta reserva?\nEsta ação não pode ser desfeita.')) return;
-  try {
-    const res = await cancelarReservaAPI(id);
-    if (res.error) { toast(res.error, 'error'); return; }
-    if (_cache) {
-      const idx = _cache.findIndex(r => r.id === id);
-      if (idx >= 0) {
-        _cache[idx].status = 'cancelada';
-        _cache[idx].devolvidoEm = new Date().toISOString();
-      }
-    }
-    document.querySelector(`.ger-item[data-id="${id}"]`)?.remove();
-    toast('Reserva cancelada com sucesso.', 'success');
-    renderSituacao();
-  } catch {
-    toast('Erro ao cancelar. Tente novamente.', 'error');
-  }
-}
-
-function abrirModal(id) {
-  const reserva = getAll().find(r => r.id === id);
-  if (!reserva) return;
-  _editId = id;
-  document.getElementById('modal-avatar').textContent = getInitials(reserva.nome);
-  document.getElementById('modal-nome').textContent = reserva.nome;
-  document.getElementById('modal-unidade').textContent = reserva.unidade;
-  document.getElementById('modal-quantidade').value = reserva.quantidade;
-  const slotList = document.getElementById('modal-slot-list');
-  slotList.innerHTML = '';
-  _modalSlotCounter = 0;
-  reserva.slots.forEach(s => addModalSlotRow(s));
-  document.getElementById('modal-edicao').hidden = false;
-  document.body.style.overflow = 'hidden';
-}
-
-function fecharModal() {
-  document.getElementById('modal-edicao').hidden = true;
-  document.body.style.overflow = '';
-  _editId = null;
-}
-
-function addModalSlotRow(slot = null) {
-  _modalSlotCounter++;
-  const today = todayISO();
-  const retDate = slot ? slot.retirada.slice(0, 10) : today;
-  const retHora = slot ? fmtTime(slot.retirada) : '08:00';
-  const devDate = slot ? slot.devolucao.slice(0, 10) : today;
-  const devHora = slot ? fmtTime(slot.devolucao) : '17:00';
-  const row = document.createElement('div');
-  row.className = 'slot-row';
-  row.dataset.id = _modalSlotCounter;
-  row.innerHTML = `
-    <div class="slot-fields">
-      <div class="slot-group">
-        <span class="slot-lbl">Retirada</span>
-        <div class="slot-dt">
-          <input type="date" class="slot-data-ret" value="${retDate}" aria-label="Data de retirada">
-          <input type="time" class="slot-hora-ret" value="${retHora}" aria-label="Hora de retirada">
-        </div>
-      </div>
-      <div class="slot-sep">→</div>
-      <div class="slot-group">
-        <span class="slot-lbl">Devolução</span>
-        <div class="slot-dt">
-          <input type="date" class="slot-data-dev" value="${devDate}" aria-label="Data de devolução">
-          <input type="time" class="slot-hora-dev" value="${devHora}" aria-label="Hora de devolução">
-        </div>
-      </div>
-    </div>
-    <button type="button" class="slot-remove" aria-label="Remover período">×</button>`;
-  row.querySelector('.slot-remove').addEventListener('click', () => {
-    if (document.querySelectorAll('#modal-slot-list .slot-row').length > 1) {
-      row.remove();
-    } else {
-      toast('É necessário ao menos um período.', 'warn');
-    }
-  });
-  document.getElementById('modal-slot-list').appendChild(row);
-}
-
-function getModalSlots() {
-  return Array.from(document.querySelectorAll('#modal-slot-list .slot-row')).map(row => {
-    const dataRet = row.querySelector('.slot-data-ret').value;
-    const horaRet = row.querySelector('.slot-hora-ret').value;
-    const dataDev = row.querySelector('.slot-data-dev').value;
-    const horaDev = row.querySelector('.slot-hora-dev').value;
-    return (dataRet && horaRet && dataDev && horaDev)
-      ? { retirada: `${dataRet}T${horaRet}`, devolucao: `${dataDev}T${horaDev}` }
-      : null;
-  }).filter(Boolean);
-}
-
-async function salvarEdicao() {
-  const quantidade = parseInt(document.getElementById('modal-quantidade').value) || 0;
-  const slots = getModalSlots();
-  if (quantidade < 1) { toast('Quantidade inválida.', 'error'); return; }
-  if (!slots.length) { toast('Adicione ao menos um período.', 'error'); return; }
-  for (const s of slots) {
-    if (parseLocal(s.retirada) >= parseLocal(s.devolucao)) {
-      toast('A devolução deve ser posterior à retirada em todos os períodos.', 'error');
-      return;
-    }
-  }
-  const btn = document.getElementById('modal-salvar');
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner-btn"></span> Salvando…`;
-  try {
-    const res = await editarReservaAPI(_editId, { quantidade, slots });
-    if (res.error) {
-      toast(res.error, 'error');
-      btn.disabled = false;
-      btn.innerHTML = _salvarLabel();
-      return;
-    }
-    if (_cache) {
-      const idx = _cache.findIndex(r => r.id === _editId);
-      if (idx >= 0) { _cache[idx].quantidade = quantidade; _cache[idx].slots = slots; }
-    }
-    toast('Reserva atualizada com sucesso!', 'success');
-    fecharModal();
-    renderGerenciar();
-    renderSituacao();
-  } catch {
-    toast('Erro ao salvar. Tente novamente.', 'error');
-    btn.disabled = false;
-    btn.innerHTML = _salvarLabel();
-  }
+function statusBadge(status) {
+  const map = {
+    ativa: '<span class="status-pill status-confirmado">Ativa</span>',
+    devolvida: '<span class="status-pill status-pendente">Devolvida</span>',
+    cancelada: '<span class="status-pill status-cancelado">Cancelada</span>',
+  };
+  return map[status] || `<span class="status-pill status-pendente">${status}</span>`;
 }
 
 function initTabs() {
@@ -1276,10 +982,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initReservar();
   initConsultar();
-  initExportar();
-  initGerenciar();
+  initConsultaProfessor();
   _atualizarDatalist();
   await fetchAll();
+  _atualizarDatalistProfessores();
   updateQtyHint();
   renderSituacao();
   setInterval(() => {

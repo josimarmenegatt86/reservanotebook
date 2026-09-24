@@ -29,11 +29,11 @@
     </button>
     <button class="tab-btn" data-tab="consultar" role="tab" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Consultar
+      Consulta por Carrinho
     </button>
-    <button class="tab-btn" data-tab="exportar" role="tab" aria-selected="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar
+    <button class="tab-btn" data-tab="consulta-professor" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Consulta por Professor
     </button>
   </nav>
   <main class="main">
@@ -71,7 +71,7 @@
               <label for="quantidade">Quantidade de Notebooks</label>
               <div class="qty-wrap">
                 <button type="button" class="qty-btn" id="qty-minus" aria-label="Diminuir quantidade">−</button>
-                <input type="number" id="quantidade" value="1" min="1" max="30" aria-live="polite">
+                <input type="number" id="quantidade" value="1" min="1" max="35" aria-live="polite">
                 <button type="button" class="qty-btn" id="qty-plus" aria-label="Aumentar quantidade">+</button>
               </div>
               <div class="qty-hint" id="qty-hint">Selecione o carrinho e adicione um período para ver disponibilidade</div>
@@ -190,9 +190,9 @@
       <div class="search-card">
         <div class="search-eyebrow">
           <span class="eyebrow-bar"></span>
-          <span>Disponibilidade</span>
+          <span>Consulta por Carrinho</span>
         </div>
-        <h2>Consultar Disponibilidade</h2>
+        <h2>Consulta por Carrinho</h2>
         <p class="search-sub">Verifique datas e horários disponíveis. Filtre por horário para consultar uma janela específica.</p>
         <div class="field-wrap">
           <label for="cons-unidade">Carrinho</label>
@@ -223,135 +223,44 @@
       </div>
       <div id="consulta-resultado" aria-live="polite"></div>
     </section>
-    <section id="tab-exportar" class="tab-content" hidden role="tabpanel">
+    <section id="tab-consulta-professor" class="tab-content" hidden role="tabpanel">
       <div class="search-card">
         <div class="search-eyebrow">
           <span class="eyebrow-bar"></span>
-          <span>Área Restrita</span>
+          <span>Consulta por Professor</span>
         </div>
-        <h2>Exportar Reservas</h2>
-        <p class="search-sub">Informe a senha para acessar o relatório completo de reservas.</p>
-        <div id="export-lock">
+        <h2>Consultar Reservas por Professor</h2>
+        <p class="search-sub">Informe o nome do professor para listar as reservas dele.</p>
+        <div class="field-wrap">
+          <label for="prof-nome">Nome do Professor</label>
+          <input type="text" id="prof-nome" placeholder="Digite o nome do professor…" autocomplete="off" list="prof-nomes-list">
+          <datalist id="prof-nomes-list"></datalist>
+        </div>
+        <div class="field-wrap">
+          <label for="prof-unidade">Carrinho <span class="label-opcional">(opcional)</span></label>
+          <select id="prof-unidade">
+            <option value="">Todos os carrinhos</option>
+            <option value="Carrinho 1">Carrinho 1</option>
+            <option value="Carrinho 2">Carrinho 2</option>
+          </select>
+        </div>
+        <div class="field-row">
           <div class="field-wrap">
-            <label for="exp-senha">Senha de Acesso</label>
-            <div class="password-wrap">
-              <input type="password" id="exp-senha" placeholder="Digite a senha" autocomplete="current-password">
-              <button type="button" class="btn-eye" id="btn-eye" aria-label="Mostrar/ocultar senha">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="error-msg" id="senha-error" hidden role="alert">Senha incorreta. Tente novamente.</div>
-          <button class="btn-buscar" id="btn-verificar-senha">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Acessar
-          </button>
-        </div>
-        <div id="export-form" hidden>
-          <div class="success-banner" role="status">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Acesso autorizado
-          </div>
-          <div class="field-wrap" style="margin-top:18px">
-            <label for="exp-unidade">Carrinho</label>
-            <select id="exp-unidade">
-              <option value="">Todos os carrinhos</option>
-              <option value="Carrinho 1">Carrinho 1</option>
-              <option value="Carrinho 2">Carrinho 2</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div class="field-wrap">
-              <label for="exp-inicio">Data Início</label>
-              <input type="date" id="exp-inicio">
-            </div>
-            <div class="field-wrap">
-              <label for="exp-fim">Data Fim</label>
-              <input type="date" id="exp-fim">
-            </div>
-          </div>
-          <button class="btn-buscar" id="btn-exportar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar CSV
-          </button>
-          <button class="btn-novo" id="btn-sair-export" style="margin-top:12px;width:100%;text-align:center;display:block;padding:12px 22px">
-            Sair da área restrita
-          </button>
-          <div class="mgmt-divider"></div>
-          <div class="search-eyebrow" style="margin:0 0 14px">
-            <span class="eyebrow-bar"></span>
-            <span>Gerenciar Reservas</span>
+            <label for="prof-inicio">Data Início <span class="label-opcional">(opcional)</span></label>
+            <input type="date" id="prof-inicio">
           </div>
           <div class="field-wrap">
-            <label for="ger-nome">Nome do Professor</label>
-            <input type="text" id="ger-nome" placeholder="Buscar por nome…" autocomplete="off">
+            <label for="prof-fim">Data Fim <span class="label-opcional">(opcional)</span></label>
+            <input type="date" id="prof-fim">
           </div>
-          <div class="field-wrap">
-            <label for="ger-unidade">Carrinho</label>
-            <select id="ger-unidade">
-              <option value="">Todos os carrinhos</option>
-              <option value="Carrinho 1">Carrinho 1</option>
-              <option value="Carrinho 2">Carrinho 2</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <div class="field-wrap">
-              <label for="ger-inicio">Data Início <span class="label-opcional">(opcional)</span></label>
-              <input type="date" id="ger-inicio">
-            </div>
-            <div class="field-wrap">
-              <label for="ger-fim">Data Fim <span class="label-opcional">(opcional)</span></label>
-              <input type="date" id="ger-fim">
-            </div>
-          </div>
-          <button class="btn-buscar" id="btn-gerenciar" style="background:var(--orange);box-shadow:0 6px 24px rgba(244,121,32,0.3);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            Buscar Reservas
-          </button>
-          <div id="ger-resultado" aria-live="polite"></div>
         </div>
+        <button class="btn-buscar" id="btn-consulta-professor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Buscar Reservas
+        </button>
       </div>
+      <div id="consulta-professor-resultado" aria-live="polite"></div>
     </section>
-    <div id="modal-edicao" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-label="Editar reserva">
-      <div class="modal-card">
-        <div class="modal-header">
-          <span>Editar Reserva</span>
-          <button class="modal-close" id="modal-fechar" aria-label="Fechar">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="modal-reserva-info">
-            <div id="modal-avatar" class="avatar" style="width:42px;height:42px;font-size:15px;background:var(--blue);border-color:var(--blue-mid);flex-shrink:0"></div>
-            <div>
-              <div id="modal-nome" style="font-weight:700;font-size:15px;color:var(--charcoal)"></div>
-              <div id="modal-unidade" style="font-size:12px;color:var(--gray-60);margin-top:2px;font-weight:600"></div>
-            </div>
-          </div>
-          <div class="field-wrap" style="margin-top:16px">
-            <label for="modal-quantidade">Quantidade de Notebooks</label>
-            <div class="qty-wrap">
-              <button type="button" class="qty-btn" id="modal-qty-minus" aria-label="Diminuir">−</button>
-              <input type="number" id="modal-quantidade" value="1" min="1" max="30" aria-live="polite">
-              <button type="button" class="qty-btn" id="modal-qty-plus" aria-label="Aumentar">+</button>
-            </div>
-          </div>
-          <div class="field-wrap">
-            <label>Períodos <span class="label-opcional">(retirada → devolução)</span></label>
-            <div id="modal-slot-list"></div>
-            <button type="button" class="btn-add-slot" id="modal-btn-add-slot">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-              Adicionar período
-            </button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-novo" id="modal-cancelar" style="height:48px;padding:0 22px">Cancelar</button>
-          <button class="btn-buscar" id="modal-salvar" style="flex:1;margin-top:0;height:48px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" aria-hidden="true"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Salvar Alterações
-          </button>
-        </div>
-      </div>
-    </div>
   </main>
   <footer class="footer">
     <img src="Logo-S.png" alt="SENAI" class="footer-logo">
