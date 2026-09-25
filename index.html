@@ -48,15 +48,16 @@
           <p class="search-sub">Preencha todos os campos para realizar sua reserva.</p>
           <form id="form-reserva" novalidate autocomplete="off">
             <div class="field-wrap" id="wrap-nome">
-              <label for="nome">Nome Completo</label>
-              <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name" list="nomes-list">
-              <datalist id="nomes-list"></datalist>
-              <div class="error-text" id="err-nome">Informe seu nome completo.</div>
+              <label for="nome">Nome do Funcionário</label>
+              <select id="nome">
+                <option value="">Selecione o funcionário</option>
+              </select>
+              <div class="error-text" id="err-nome">Selecione o funcionário.</div>
             </div>
-            <div class="field-wrap" id="wrap-cpf">
-              <label for="cpf">CPF</label>
-              <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
-              <div class="error-text" id="err-cpf">Informe seu CPF.</div>
+            <div class="field-wrap" id="wrap-matricula">
+              <label for="matricula">Matrícula</label>
+              <input type="text" id="matricula" placeholder="Número da matrícula" inputmode="numeric" autocomplete="off">
+              <div class="error-text" id="err-matricula">Informe a matrícula.</div>
             </div>
             <div class="field-wrap" id="wrap-unidade">
               <label for="unidade">Carrinho</label>
@@ -144,7 +145,7 @@
             <div class="avatar" id="conf-avatar"></div>
             <div class="card-name-block">
               <div class="card-name" id="conf-nome"></div>
-              <div class="card-name-sub" id="conf-cpf"></div>
+              <div class="card-name-sub" id="conf-matricula"></div>
             </div>
             <span class="status-pill status-confirmado">Confirmado</span>
           </div>
@@ -230,11 +231,12 @@
           <span>Consulta por Professor</span>
         </div>
         <h2>Consultar Reservas por Professor</h2>
-        <p class="search-sub">Informe o nome do professor para listar as reservas dele.</p>
+        <p class="search-sub">Selecione o funcionário para listar as reservas dele.</p>
         <div class="field-wrap">
-          <label for="prof-nome">Nome do Professor</label>
-          <input type="text" id="prof-nome" placeholder="Digite o nome do professor…" autocomplete="off" list="prof-nomes-list">
-          <datalist id="prof-nomes-list"></datalist>
+          <label for="prof-nome">Nome do Funcionário</label>
+          <select id="prof-nome">
+            <option value="">Selecione o funcionário</option>
+          </select>
         </div>
         <div class="field-wrap">
           <label for="prof-unidade">Carrinho <span class="label-opcional">(opcional)</span></label>
@@ -263,10 +265,9 @@
     </section>
   </main>
   <footer class="footer">
-    <img src="Logo-S.png" alt="SENAI" class="footer-logo">
-    SENAI Santa Catarina &nbsp;·&nbsp; Sistema de Reserva de Notebooks
+    <p>SENAI Santa Catarina · Unidade Videira — Reserva de Notebooks</p>
   </footer>
-  <div id="toast" class="toast" role="status" aria-live="assertive" aria-atomic="true"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>

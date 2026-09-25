@@ -1,16 +1,13 @@
 'use strict';
-const API_URL = 'https://script.google.com/macros/s/AKfycbwvnP6CVA2zAbAmvniq6_uQpA2DRdC9Q4d_4_PAWuZjwldr-31cQ5LlMnHBPhQiA5rdpA/exec';
-
+const API_URL = 'https://script.google.com/macros/s/AKfycbxc1KuZjAg0WH5RtJZUz33xYC4IzEKbb9k_uAIYmA8BpFeFLSi2ygp3hA9TcgCIxmiR6w/exec';
 const MAX_NB = 35;
 const STORE_KEY = 'reserva_nb_v2';
-const NOMES_KEY = 'reserva_nb_nomes';
 const CARRINHOS = ['Carrinho 1', 'Carrinho 2'];
-
 let _cache = null, _cacheTime = 0;
 const CACHE_TTL = 30_000;
 let _apiOnline = null;
 let _apiErro = '';
-
+let _funcionarios = [];
 async function fetchAll(force = false) {
   if (!force && _cache !== null && Date.now() - _cacheTime < CACHE_TTL) return _cache;
   if (!API_URL) {
@@ -54,11 +51,51 @@ async function fetchAll(force = false) {
     return _cache;
   }
 }
-
+async function fetchFuncionarios(force = false) {
+  if (!force && _funcionarios.length > 0) return _funcionarios;
+  if (!API_URL) return _funcionarios;
+  try {
+    const res = await fetch(`${API_URL}?action=getFuncionarios`);
+    const data = await res.json();
+    if (data && Array.isArray(data.funcionarios)) {
+      _funcionarios = data.funcionarios;
+    }
+  } catch (err) {
+    console.error('[API] fetchFuncionarios — falha:', err.message ?? err);
+  }
+  return _funcionarios;
+}
+function _popularSelectFuncionarios() {
+  const opts = _funcionarios
+    .slice()
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    .map(f => `<option value="${f.nome.replace(/"/g, '&quot;')}">${f.nome.replace(/"/g, '&quot;')}</option>`)
+    .join('');
+  const selNome = document.getElementById('nome');
+  const selProf = document.getElementById('prof-nome');
+  if (selNome) {
+    const cur = selNome.value;
+    selNome.innerHTML = '<option value="">Selecione o funcionário</option>' + opts;
+    if (cur) selNome.value = cur;
+  }
+  if (selProf) {
+    const cur = selProf.value;
+    selProf.innerHTML = '<option value="">Selecione o funcionário</option>' + opts;
+    if (cur) selProf.value = cur;
+  }
+}
+function validarMatriculaFuncionario(nome, matricula) {
+  if (_funcionarios.length === 0) return null;
+  const nomeNorm = String(nome).trim().toLowerCase();
+  const matNorm = String(matricula).trim();
+  const f = _funcionarios.find(x => x.nome.toLowerCase() === nomeNorm);
+  if (!f) return 'Funcionário não cadastrado. Selecione um nome da lista.';
+  if (f.matricula !== matNorm) return 'Matrícula não corresponde ao funcionário selecionado.';
+  return null;
+}
 function getAll() {
   return _cache ?? JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
 }
-
 async function saveReserva(reserva) {
   if (!API_URL) {
     const list = getAll();
@@ -93,7 +130,6 @@ async function saveReserva(reserva) {
   _apiOnline = true;
   return data;
 }
-
 function _autoReturnLocal() {
   const now = new Date();
   const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
@@ -109,12 +145,10 @@ function _autoReturnLocal() {
   });
   if (changed) localStorage.setItem(STORE_KEY, JSON.stringify(list));
 }
-
 function overlaps(slotA, slotB) {
   return parseLocal(slotA.retirada) < parseLocal(slotB.devolucao) &&
          parseLocal(slotB.retirada) < parseLocal(slotA.devolucao);
 }
-
 function getDisp(carrinho, slot) {
   const usado = getAll()
     .filter(r => r.status === 'ativa' && r.unidade === carrinho)
@@ -122,7 +156,6 @@ function getDisp(carrinho, slot) {
     .reduce((n, r) => n + r.quantidade, 0);
   return MAX_NB - usado;
 }
-
 function peakUsage(carrinho, dateISO) {
   const dayStart = parseLocal(dateISO + 'T00:00');
   const dayEnd = parseLocal(dateISO + 'T23:59');
@@ -148,7 +181,6 @@ function peakUsage(carrinho, dateISO) {
   });
   return peak;
 }
-
 function findNearbyDates(carrinho, slot, quantidade, maxResults = 3) {
   const retStart = parseLocal(slot.retirada);
   const devEnd = parseLocal(slot.devolucao);
@@ -174,110 +206,48 @@ function findNearbyDates(carrinho, slot, quantidade, maxResults = 3) {
   }
   return suggestions;
 }
-
 function parseLocal(str) {
   const [d, t = '00:00'] = String(str).split('T');
   const [y, mo, dy] = d.split('-').map(Number);
   const [h, mi = 0] = t.split(':').map(Number);
   return new Date(y, mo - 1, dy, h, mi, 0);
 }
-
 function toISOLocal(d) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
 function todayISO() { return toISOLocal(new Date()).slice(0, 10); }
-
 function pad(n) { return String(n).padStart(2, '0'); }
-
 function fmtTime(iso) {
   const d = parseLocal(iso);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
 function fmtDateShort(iso) {
   const d = parseLocal(iso);
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)}`;
 }
-
 function fmtDatetime(iso) {
   return `${fmtDateShort(iso)} ${fmtTime(iso)}h`;
 }
-
 function fmtDateTimeFull(isoZ) {
   if (!isoZ) return '';
   const d = new Date(isoZ);
   if (isNaN(d)) return String(isoZ);
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
-
-function saveNome(nome) {
-  const nomes = JSON.parse(localStorage.getItem(NOMES_KEY) || '[]');
-  const normalizado = nome.trim();
-  if (normalizado && !nomes.includes(normalizado)) {
-    nomes.push(normalizado);
-    localStorage.setItem(NOMES_KEY, JSON.stringify(nomes));
-  }
-  _atualizarDatalist();
-}
-
-function _atualizarDatalist() {
-  const nomes = JSON.parse(localStorage.getItem(NOMES_KEY) || '[]');
-  const datalist = document.getElementById('nomes-list');
-  if (!datalist) return;
-  datalist.innerHTML = nomes
-    .map(n => `<option value="${n.replace(/"/g, '&quot;')}">`)
-    .join('');
-}
-
-// Sugestões de professores já cadastrados na planilha (qualquer status)
-function _atualizarDatalistProfessores() {
-  const datalist = document.getElementById('prof-nomes-list');
-  if (!datalist) return;
-  const nomes = [...new Set(
-    getAll().map(r => r.nome).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  datalist.innerHTML = nomes
-    .map(n => `<option value="${n.replace(/"/g, '&quot;')}">`)
-    .join('');
-}
-
 function maskName(nome) {
   return nome.trim().split(/\s+/).map((p, i) => {
     const keep = i === 0 ? 2 : 1;
     return p.slice(0, keep) + '*'.repeat(Math.max(1, p.length - keep));
   }).join(' ');
 }
-
-function maskCPF(cpf) {
-  const s = String(cpf).replace(/\D/g, '');
-  if (s.length < 11) return s;
-  return s.slice(0, 3) + '.***.***-' + s.slice(-2);
-}
-
-function validarCPF(cpf) {
-  const s = String(cpf).replace(/\D/g, '');
-  if (s.length !== 11 || /^(\d)\1{10}$/.test(s)) return false;
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += parseInt(s[i]) * (10 - i);
-  let d1 = 11 - (soma % 11); if (d1 >= 10) d1 = 0;
-  if (d1 !== parseInt(s[9])) return false;
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += parseInt(s[i]) * (11 - i);
-  let d2 = 11 - (soma % 11); if (d2 >= 10) d2 = 0;
-  return d2 === parseInt(s[10]);
-}
-
 function getInitials(nome) {
   const parts = nome.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
-
 let _toastTimer;
 function toast(msg, type = '') {
   const el = document.getElementById('toast');
@@ -286,24 +256,20 @@ function toast(msg, type = '') {
   el.className = `toast ${type ? 'toast-' + type : ''} show`;
   _toastTimer = setTimeout(() => { el.className = 'toast'; }, 3400);
 }
-
 function fieldError(wrapId, errId, msg) {
   const wrap = document.getElementById(wrapId);
   const err = document.getElementById(errId);
   if (wrap) wrap.classList.add('has-error');
   if (err && msg) err.textContent = msg;
 }
-
 function fieldClear(wrapId) {
   document.getElementById(wrapId)?.classList.remove('has-error');
 }
-
 function clearAllErrors() {
-  ['wrap-nome','wrap-cpf','wrap-unidade','wrap-quantidade','wrap-slots']
+  ['wrap-nome','wrap-matricula','wrap-unidade','wrap-quantidade','wrap-slots']
     .forEach(id => fieldClear(id));
   document.querySelectorAll('.slot-row').forEach(r => r.classList.remove('slot-error'));
 }
-
 let _slotCounter = 0;
 function addSlotRow(opts = {}) {
   _slotCounter++;
@@ -346,7 +312,6 @@ function addSlotRow(opts = {}) {
   document.getElementById('slot-list').appendChild(row);
   updateQtyHint();
 }
-
 function getSlotValues() {
   return Array.from(document.querySelectorAll('.slot-row')).map(row => {
     const dataRet = row.querySelector('.slot-data-ret').value;
@@ -361,7 +326,6 @@ function getSlotValues() {
     };
   });
 }
-
 function updateQtyHint() {
   const hint = document.getElementById('qty-hint');
   const qtyInput = document.getElementById('quantidade');
@@ -386,7 +350,6 @@ function updateQtyHint() {
     hint.className = 'qty-hint qty-ok';
   }
 }
-
 function initReservar() {
   const qtyInput = document.getElementById('quantidade');
   document.getElementById('qty-minus').addEventListener('click', () => {
@@ -421,15 +384,15 @@ function initReservar() {
     updateQtyHint();
     clearAllErrors();
     resetRecorrente();
+    _popularSelectFuncionarios();
   });
-  ['nome','cpf','unidade','quantidade'].forEach(id => {
+  ['nome','matricula','unidade','quantidade'].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener('input', () => fieldClear(`wrap-${id}`));
     el.addEventListener('change', () => fieldClear(`wrap-${id}`));
   });
   initRecorrente();
 }
-
 const MAX_SLOTS_RECORRENTE = 60;
 const _recDiasSelecionados = new Set();
 function initRecorrente() {
@@ -452,7 +415,6 @@ function initRecorrente() {
   });
   document.getElementById('btn-gerar-recorrente').addEventListener('click', gerarPeriodosRecorrentes);
 }
-
 function resetRecorrente() {
   document.getElementById('recorrente-panel').hidden = true;
   document.getElementById('rec-inicio').value = '';
@@ -463,7 +425,6 @@ function resetRecorrente() {
   document.querySelectorAll('.weekday-btn.active').forEach(b => b.classList.remove('active'));
   _recDiasSelecionados.clear();
 }
-
 function gerarPeriodosRecorrentes() {
   const hint = document.getElementById('rec-hint');
   const inicio = document.getElementById('rec-inicio').value;
@@ -501,27 +462,29 @@ function gerarPeriodosRecorrentes() {
   document.getElementById('recorrente-panel').hidden = true;
   updateQtyHint();
 }
-
 async function handleSubmit(e) {
   e.preventDefault();
   clearAllErrors();
   document.getElementById('suggestion-box').hidden = true;
   const nome = document.getElementById('nome').value.trim();
-  const cpf = document.getElementById('cpf').value.trim();
+  const matricula = document.getElementById('matricula').value.trim();
   const carrinho = document.getElementById('unidade').value;
   const quantidade = parseInt(document.getElementById('quantidade').value) || 0;
   const slotData = getSlotValues();
   let valid = true;
   if (!nome) {
-    fieldError('wrap-nome', 'err-nome', 'Informe seu nome completo.');
+    fieldError('wrap-nome', 'err-nome', 'Selecione o funcionário.');
     valid = false;
   }
-  if (!cpf) {
-    fieldError('wrap-cpf', 'err-cpf', 'Informe seu CPF.');
+  if (!matricula) {
+    fieldError('wrap-matricula', 'err-matricula', 'Informe a matrícula.');
     valid = false;
-  } else if (!validarCPF(cpf)) {
-    fieldError('wrap-cpf', 'err-cpf', 'CPF inválido. Verifique os 11 dígitos.');
-    valid = false;
+  } else {
+    const erroMat = validarMatriculaFuncionario(nome, matricula);
+    if (erroMat) {
+      fieldError('wrap-matricula', 'err-matricula', erroMat);
+      valid = false;
+    }
   }
   if (!carrinho) {
     fieldError('wrap-unidade', 'err-unidade', 'Selecione o carrinho.');
@@ -571,7 +534,7 @@ async function handleSubmit(e) {
   const reserva = {
     id: genId(),
     nome,
-    cpf,
+    matricula,
     unidade: carrinho,
     quantidade,
     slots,
@@ -593,11 +556,9 @@ async function handleSubmit(e) {
     btn.innerHTML = _btnReservarLabel();
   }
 }
-
 function _btnReservarLabel() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Confirmar Reserva`;
 }
-
 function showSuggestions(conflictSlot, disp, suggestions, quantidade) {
   const box = document.getElementById('suggestion-box');
   const header = `<div class="suggestion-title">
@@ -634,13 +595,12 @@ function showSuggestions(conflictSlot, disp, suggestions, quantidade) {
     });
   });
 }
-
 function showConfirmation(reserva) {
   document.getElementById('form-section').hidden = true;
   document.getElementById('confirmacao').hidden = false;
   document.getElementById('conf-avatar').textContent = getInitials(reserva.nome);
   document.getElementById('conf-nome').textContent = maskName(reserva.nome);
-  document.getElementById('conf-cpf').textContent = maskCPF(reserva.cpf);
+  document.getElementById('conf-matricula').textContent = `Matrícula ${reserva.matricula}`;
   document.getElementById('conf-unidade').textContent = reserva.unidade;
   document.getElementById('conf-quantidade').textContent =
     `${reserva.quantidade} notebook${reserva.quantidade > 1 ? 's' : ''}`;
@@ -654,18 +614,15 @@ function showConfirmation(reserva) {
   `).join('');
   document.getElementById('btn-reservar').disabled = false;
   document.getElementById('btn-reservar').innerHTML = _btnReservarLabel();
-  saveNome(reserva.nome);
   toast('Reserva realizada com sucesso!', 'success');
   renderSituacao();
 }
-
 function initConsultar() {
   const now = new Date();
   document.getElementById('cons-mes').value =
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
   document.getElementById('btn-consultar').addEventListener('click', renderConsulta);
 }
-
 async function renderConsulta() {
   const btn = document.getElementById('btn-consultar');
   btn.disabled = true;
@@ -771,7 +728,6 @@ async function renderConsulta() {
   }
   btn.disabled = false;
 }
-
 function getWeekdays(year, month) {
   const days = [];
   const total = new Date(year, month, 0).getDate();
@@ -781,7 +737,6 @@ function getWeekdays(year, month) {
   }
   return days;
 }
-
 function _updateApiStatusEl() {
   const el = document.getElementById('api-status');
   if (!el) return;
@@ -792,7 +747,6 @@ function _updateApiStatusEl() {
     el.hidden = true;
   }
 }
-
 async function renderSituacao() {
   const container = document.getElementById('situacao-cards');
   if (!container) return;
@@ -846,7 +800,7 @@ async function renderSituacao() {
           <div style="flex:1;min-width:0">
             <div class="info-val" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${maskName(r.nome || '')}</div>
             <div style="margin:3px 0 0;font-size:10.5px;color:var(--gray-60);font-weight:600;line-height:1.4">
-              CPF ${maskCPF(r.cpf || '')} &nbsp;·&nbsp; ${r.quantidade} notebook${r.quantidade > 1 ? 's' : ''} &nbsp;·&nbsp; ${fmtTime(slot.retirada)}–${fmtTime(slot.devolucao)}
+              Matrícula ${r.matricula || '—'} &nbsp;·&nbsp; ${r.quantidade} notebook${r.quantidade > 1 ? 's' : ''} &nbsp;·&nbsp; ${fmtTime(slot.retirada)}–${fmtTime(slot.devolucao)}
             </div>
           </div>
           ${isNow
@@ -885,32 +839,29 @@ async function renderSituacao() {
     </div>`;
   }
 }
-
 function initConsultaProfessor() {
   document.getElementById('btn-consulta-professor').addEventListener('click', renderConsultaProfessor);
 }
-
 function _consultaProfessorLabel() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Buscar Reservas`;
 }
-
 async function renderConsultaProfessor() {
   const btn = document.getElementById('btn-consulta-professor');
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner-btn"></span> Buscando…`;
   await fetchAll(true);
-  _atualizarDatalistProfessores();
+  _popularSelectFuncionarios();
   const nome = document.getElementById('prof-nome').value.trim().toLowerCase();
   const carrinho = document.getElementById('prof-unidade').value;
   const inicio = document.getElementById('prof-inicio').value;
   const fim = document.getElementById('prof-fim').value;
   if (!nome) {
-    toast('Digite o nome do professor.', 'warn');
+    toast('Selecione o funcionário.', 'warn');
     btn.disabled = false;
     btn.innerHTML = _consultaProfessorLabel();
     return;
   }
-  let reservas = getAll().filter(r => r.nome.toLowerCase().includes(nome));
+  let reservas = getAll().filter(r => r.nome.toLowerCase() === nome);
   if (carrinho) reservas = reservas.filter(r => r.unidade === carrinho);
   if (inicio || fim) {
     reservas = reservas.filter(r =>
@@ -927,7 +878,7 @@ async function renderConsultaProfessor() {
   });
   const container = document.getElementById('consulta-professor-resultado');
   if (!reservas.length) {
-    container.innerHTML = `<p style="text-align:center;padding:20px 0;color:var(--gray-40);font-size:13px;font-weight:600">Nenhuma reserva encontrada para este professor.</p>`;
+    container.innerHTML = `<p style="text-align:center;padding:20px 0;color:var(--gray-40);font-size:13px;font-weight:600">Nenhuma reserva encontrada para este funcionário.</p>`;
   } else {
     container.innerHTML = `<div class="search-card" style="padding-top:20px">
       <div class="search-eyebrow"><span class="eyebrow-bar"></span><span>${reservas.length} reserva(s) encontrada(s)</span></div>
@@ -937,7 +888,6 @@ async function renderConsultaProfessor() {
   btn.disabled = false;
   btn.innerHTML = _consultaProfessorLabel();
 }
-
 function profItemHTML(r) {
   const slotsHtml = r.slots.map(s =>
     `<span class="slot-time-badge">${fmtDatetime(s.retirada)} → ${fmtTime(s.devolucao)}h</span>`
@@ -945,13 +895,12 @@ function profItemHTML(r) {
   return `<div class="ger-item" data-id="${r.id}">
     <div class="ger-item-info">
       <div class="ger-item-name">${r.nome}</div>
-      <div class="ger-item-meta">${r.unidade} &middot; CPF ${maskCPF(r.cpf)} &middot; ${r.quantidade} notebook${r.quantidade !== 1 ? 's' : ''}</div>
+      <div class="ger-item-meta">${r.unidade} &middot; Matrícula ${r.matricula || '—'} &middot; ${r.quantidade} notebook${r.quantidade !== 1 ? 's' : ''}</div>
       <div class="ger-item-slots">${slotsHtml}</div>
     </div>
     <div class="ger-item-actions">${statusBadge(r.status)}</div>
   </div>`;
 }
-
 function statusBadge(status) {
   const map = {
     ativa: '<span class="status-pill status-confirmado">Ativa</span>',
@@ -960,7 +909,6 @@ function statusBadge(status) {
   };
   return map[status] || `<span class="status-pill status-pendente">${status}</span>`;
 }
-
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -977,15 +925,14 @@ function initTabs() {
     });
   });
 }
-
 document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initReservar();
   initConsultar();
   initConsultaProfessor();
-  _atualizarDatalist();
   await fetchAll();
-  _atualizarDatalistProfessores();
+  await fetchFuncionarios();
+  _popularSelectFuncionarios();
   updateQtyHint();
   renderSituacao();
   setInterval(() => {

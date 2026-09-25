@@ -1,4 +1,5 @@
 const SHEET_NAME = 'Reservas';
+const FUNC_SHEET_NAME = 'Funcionarios';
 const MAX_NB = 35;
 
 function doGet(e) {
@@ -7,6 +8,9 @@ function doGet(e) {
     if (action === 'getAll') {
       processAutoReturn();
       return jsonOk(getAllReservas());
+    }
+    if (action === 'getFuncionarios') {
+      return jsonOk({ funcionarios: listarFuncionarios() });
     }
     return jsonOk({ error: 'unknown_action: ' + action });
   } catch (err) {
@@ -63,6 +67,7 @@ function jsonOk(data) {
 
 function inicializarPlanilha() {
   getSheet();
+  getFuncionariosSheet();
 }
 
 function getSheet() {
@@ -76,7 +81,7 @@ function getSheet() {
 }
 
 function _setupCabecalho(sheet) {
-  const cols = ['ID', 'Nome', 'CPF', 'Carrinho', 'Quantidade', 'Slots (JSON)', 'Status', 'Criado Em', 'Devolvido Em'];
+  const cols = ['ID', 'Nome', 'Matrícula', 'Carrinho', 'Quantidade', 'Slots (JSON)', 'Status', 'Criado Em', 'Devolvido Em'];
   sheet.appendRow(cols);
   sheet.setFrozenRows(1);
   const hdr = sheet.getRange(1, 1, 1, cols.length);
@@ -95,6 +100,53 @@ function _setupCabecalho(sheet) {
   sheet.setColumnWidth(9, 170);
 }
 
+function getFuncionariosSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(FUNC_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(FUNC_SHEET_NAME);
+    const cols = ['Nome', 'Matrícula'];
+    sheet.appendRow(cols);
+    sheet.setFrozenRows(1);
+    const hdr = sheet.getRange(1, 1, 1, cols.length);
+    hdr.setBackground('#003087');
+    hdr.setFontColor('#ffffff');
+    hdr.setFontWeight('bold');
+    hdr.setFontSize(11);
+    sheet.setColumnWidth(1, 250);
+    sheet.setColumnWidth(2, 140);
+  }
+  return sheet;
+}
+
+function listarFuncionarios() {
+  const sheet = getFuncionariosSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+  return sheet.getRange(2, 1, lastRow - 1, 2).getValues()
+    .filter(r => String(r[0]).trim() !== '' && String(r[1]).trim() !== '')
+    .map(r => ({
+      nome: String(r[0]).trim(),
+      matricula: String(r[1]).trim(),
+    }));
+}
+
+// Valida se o par nome + matrícula existe na aba Funcionarios.
+// Retorna null se válido, ou mensagem de erro.
+function validarFuncionario(nome, matricula) {
+  if (!nome || !String(nome).trim()) return 'Nome inválido: selecione um funcionário da lista.';
+  if (!matricula || String(matricula).trim() === '') return 'Matrícula inválida: informe a matrícula.';
+  const funcs = listarFuncionarios();
+  if (funcs.length === 0) return 'Nenhum funcionário cadastrado na aba "Funcionarios" da planilha.';
+  const nomeNorm = String(nome).trim().toLowerCase();
+  const matNorm = String(matricula).trim();
+  const encontrouNome = funcs.some(f => f.nome.toLowerCase() === nomeNorm);
+  if (!encontrouNome) return 'Funcionário não cadastrado: selecione um nome da lista.';
+  const parValido = funcs.some(f => f.nome.toLowerCase() === nomeNorm && f.matricula === matNorm);
+  if (!parValido) return 'Matrícula não corresponde ao funcionário selecionado. Cadastro recusado.';
+  return null;
+}
+
 function getAllReservas() {
   const sheet = getSheet();
   const lastRow = sheet.getLastRow();
@@ -104,7 +156,7 @@ function getAllReservas() {
     .map(row => ({
       id: String(row[0]),
       nome: String(row[1]),
-      cpf: String(row[2]),
+      matricula: String(row[2]),
       unidade: String(row[3]),
       quantidade: Number(row[4]),
       slots: safeJson(row[5]),
@@ -134,9 +186,8 @@ function criarReserva(r) {
   if (!r || !Array.isArray(r.slots) || r.slots.length === 0) {
     return 'Reserva inválida: nenhum período informado.';
   }
-  if (!r.cpf || !/^\d{11}$/.test(String(r.cpf).replace(/\D/g, ''))) {
-    return 'CPF inválido: informe os 11 dígitos.';
-  }
+  const erroFunc = validarFuncionario(r.nome, r.matricula);
+  if (erroFunc) return erroFunc;
   for (var i = 0; i < r.slots.length; i++) {
     var s = r.slots[i];
     if (!s.retirada || !s.devolucao) {
@@ -166,7 +217,7 @@ function criarReserva(r) {
     }
   }
   getSheet().appendRow([
-    r.id, r.nome, r.cpf, r.unidade, r.quantidade,
+    r.id, r.nome, r.matricula, r.unidade, r.quantidade,
     JSON.stringify(r.slots), 'ativa', r.criadoEm, '',
   ]);
   return null;
