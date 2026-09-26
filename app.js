@@ -72,15 +72,23 @@ function _popularSelectFuncionarios() {
     .map(f => `<option value="${f.nome.replace(/"/g, '&quot;')}">${f.nome.replace(/"/g, '&quot;')}</option>`)
     .join('');
   const selNome = document.getElementById('nome');
-  const selProf = document.getElementById('prof-nome');
   if (selNome) {
     const cur = selNome.value;
     selNome.innerHTML = '<option value="">Selecione o funcionário</option>' + opts;
     if (cur) selNome.value = cur;
   }
+  const selProf = document.getElementById('prof-nome');
   if (selProf) {
+    // Somente funcionários que já possuem ao menos uma reserva registrada
+    const nomesComReserva = new Set(getAll().map(r => r.nome.trim().toLowerCase()));
+    const optsProf = _funcionarios
+      .filter(f => nomesComReserva.has(f.nome.trim().toLowerCase()))
+      .slice()
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      .map(f => `<option value="${f.nome.replace(/"/g, '&quot;')}">${f.nome.replace(/"/g, '&quot;')}</option>`)
+      .join('');
     const cur = selProf.value;
-    selProf.innerHTML = '<option value="">Selecione o funcionário</option>' + opts;
+    selProf.innerHTML = '<option value="">Selecione o funcionário</option>' + optsProf;
     if (cur) selProf.value = cur;
   }
 }
