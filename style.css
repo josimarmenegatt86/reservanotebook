@@ -233,7 +233,26 @@ body::after {
   transition: border-color .2s, box-shadow .2s;
   -webkit-appearance: none; appearance: none;
 }
-.field-wrap input::placeholder { color: var(--gray-40); }
+.field-wrap textarea {
+  width: 100%;
+  border: 1.5px solid var(--gray-20);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  color: var(--charcoal);
+  background: var(--white);
+  resize: vertical;
+  min-height: 72px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field-wrap textarea:focus {
+  outline: none;
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(0,48,135,0.1);
+}
+.field-wrap input::placeholder,
+.field-wrap textarea::placeholder { color: var(--gray-40); }
 .field-wrap input:focus,
 .field-wrap select:focus {
   outline: none;
@@ -1185,6 +1204,20 @@ body::after {
 .btn-ger-edit:hover   { background: var(--blue-xlight); }
 .btn-ger-cancel { background: var(--red-bg); color: var(--red); }
 .btn-ger-cancel:hover { background: #ffd6d6; }
+.btn-ger-finalizar { background: var(--green-bg); color: var(--green); }
+.btn-ger-finalizar:hover { background: #d8f0df; }
+
+.ger-item-defeito {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--orange-light);
+  border: 1px solid rgba(244,121,32,0.3);
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--orange-dark);
+  line-height: 1.5;
+}
+.defeito-icon { margin-right: 2px; }
 
 /* ══════════════════════════════════
    MODAL DE EDIÇÃO

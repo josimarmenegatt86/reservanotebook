@@ -1,5 +1,5 @@
 'use strict';
-const API_URL = 'https://script.google.com/macros/s/AKfycbxc1KuZjAg0WH5RtJZUz33xYC4IzEKbb9k_uAIYmA8BpFeFLSi2ygp3hA9TcgCIxmiR6w/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwZTCdHVnjMpjel3_e5SdtM5KGezSipIIa1fW-X4Xl_zU4-OmNsFTDzRzymreTyzrBW/exec';
 const MAX_NB = 35;
 const STORE_KEY = 'reserva_nb_v2';
 const CARRINHOS = ['Carrinho 1', 'Carrinho 2'];
@@ -900,14 +900,26 @@ function profItemHTML(r) {
   const slotsHtml = r.slots.map(s =>
     `<span class="slot-time-badge">${fmtDatetime(s.retirada)} → ${fmtTime(s.devolucao)}h</span>`
   ).join('');
+  const obsHtml = r.observacao
+    ? `<div class="ger-item-defeito"><span class="defeito-icon">⚠️</span> <strong>Defeito reportado:</strong> ${escapeHtml(r.observacao)}</div>`
+    : '';
+  const btnFinalizar = r.status === 'ativa'
+    ? `<button type="button" class="btn-ger btn-ger-finalizar" data-finalizar-id="${r.id}">Finalizar Reserva</button>`
+    : '';
   return `<div class="ger-item" data-id="${r.id}">
     <div class="ger-item-info">
       <div class="ger-item-name">${r.nome}</div>
       <div class="ger-item-meta">${r.unidade} &middot; Matrícula ${r.matricula || '—'} &middot; ${r.quantidade} notebook${r.quantidade !== 1 ? 's' : ''}</div>
       <div class="ger-item-slots">${slotsHtml}</div>
+      ${obsHtml}
     </div>
-    <div class="ger-item-actions">${statusBadge(r.status)}</div>
+    <div class="ger-item-actions">${statusBadge(r.status)}${btnFinalizar}</div>
   </div>`;
+}
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
 }
 function statusBadge(status) {
   const map = {
@@ -916,6 +928,105 @@ function statusBadge(status) {
     cancelada: '<span class="status-pill status-cancelado">Cancelada</span>',
   };
   return map[status] || `<span class="status-pill status-pendente">${status}</span>`;
+}
+// ── Finalizar Reserva (professor confirma devolução e pode reportar defeito) ──
+function initFinalizarReserva() {
+  document.getElementById('consulta-professor-resultado').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-finalizar-id]');
+    if (!btn) return;
+    const reserva = getAll().find(r => String(r.id) === String(btn.dataset.finalizarId));
+    if (!reserva) { toast('Reserva não encontrada — atualize a busca.', 'warn'); return; }
+    abrirModalFinalizar(reserva);
+  });
+}
+function abrirModalFinalizar(reserva) {
+  fecharModalFinalizar();
+  const slotsResumo = reserva.slots.map(s =>
+    `<span class="slot-time-badge">${fmtDatetime(s.retirada)} → ${fmtTime(s.devolucao)}h</span>`
+  ).join('');
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'modal-finalizar';
+  wrap.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Finalizar Reserva</span>
+        <button type="button" class="modal-close" id="modal-finalizar-close" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-reserva-info">
+          <div class="card-name-block">
+            <div class="card-name">${reserva.nome}</div>
+            <div class="card-name-sub">${reserva.unidade} &middot; ${reserva.quantidade} notebook${reserva.quantidade !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="ger-item-slots" style="margin:14px 0">${slotsResumo}</div>
+        <p class="search-sub" style="margin-bottom:10px">
+          Confirme que os notebooks já foram devolvidos. Se encontrou algum problema no equipamento, descreva abaixo — caso contrário, deixe em branco.
+        </p>
+        <div class="field-wrap" style="margin-bottom:0">
+          <label for="finalizar-observacao">Defeito encontrado <span class="label-opcional">(opcional)</span></label>
+          <textarea id="finalizar-observacao" rows="3" placeholder="Ex.: notebook nº 4 não liga, tela trincada, carregador com mau contato..." maxlength="500"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-novo" id="modal-finalizar-cancelar" style="flex:1">Cancelar</button>
+        <button type="button" class="btn-buscar" id="modal-finalizar-confirmar" style="flex:1;height:44px">Confirmar Finalização</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('modal-finalizar-close').addEventListener('click', fecharModalFinalizar);
+  document.getElementById('modal-finalizar-cancelar').addEventListener('click', fecharModalFinalizar);
+  wrap.addEventListener('click', (ev) => { if (ev.target === wrap) fecharModalFinalizar(); });
+  document.getElementById('modal-finalizar-confirmar').addEventListener('click', () => confirmarFinalizacao(reserva.id));
+}
+function fecharModalFinalizar() {
+  const el = document.getElementById('modal-finalizar');
+  if (el) el.remove();
+}
+async function confirmarFinalizacao(id) {
+  const btn = document.getElementById('modal-finalizar-confirmar');
+  const observacao = document.getElementById('finalizar-observacao').value.trim();
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-btn"></span> Enviando…`;
+  const resultado = await finalizarReserva(id, observacao);
+  if (resultado.error) {
+    toast(resultado.error, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Finalização';
+    return;
+  }
+  fecharModalFinalizar();
+  toast(observacao ? 'Reserva finalizada — defeito registrado.' : 'Reserva finalizada com sucesso!', 'success');
+  await renderConsultaProfessor();
+}
+async function finalizarReserva(id, observacao) {
+  if (!API_URL) {
+    const list = getAll();
+    const idx = list.findIndex(r => String(r.id) === String(id));
+    if (idx === -1) return { error: 'Reserva não encontrada.' };
+    if (list[idx].status !== 'ativa') return { error: 'Esta reserva já foi finalizada, devolvida ou cancelada anteriormente.' };
+    list[idx].status = 'devolvida';
+    list[idx].devolvidoEm = new Date().toISOString();
+    if (observacao) list[idx].observacao = observacao;
+    localStorage.setItem(STORE_KEY, JSON.stringify(list));
+    _cache = list;
+    _cacheTime = Date.now();
+    return { ok: true };
+  }
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'finalizar', id, observacao }),
+    });
+    const data = await res.json();
+    if (data && data.error) return { error: data.error };
+    return { ok: true };
+  } catch (err) {
+    console.error('[API] finalizarReserva — falha:', err.message ?? err);
+    return { error: 'Falha de conexão ao finalizar a reserva. Tente novamente.' };
+  }
 }
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -938,6 +1049,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReservar();
   initConsultar();
   initConsultaProfessor();
+  initFinalizarReserva();
   await fetchAll();
   await fetchFuncionarios();
   _popularSelectFuncionarios();

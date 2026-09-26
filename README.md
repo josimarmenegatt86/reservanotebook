@@ -38,6 +38,11 @@ Sistema web de reserva de notebooks para a unidade Videira do SENAI SC. Permite 
 - Visão individual (detalhada, com horários reservados) ou comparativa entre os carrinhos
 - Legenda de disponibilidade (Alta / Média / Baixa / Esgotado)
 
+### Consulta por Professor
+- Lista apenas os funcionários cadastrados que já possuem alguma reserva registrada
+- **Finalizar Reserva**: o próprio professor pode confirmar que já devolveu os notebooks antes do horário previsto, encerrando a reserva na hora
+- Ao finalizar, é possível relatar um defeito encontrado no equipamento (opcional); a observação fica visível na consulta e registrada na planilha
+
 ### Exportar (área restrita)
 - Protegida por senha, **validada também no servidor** (Code.gs) a cada cancelamento/edição de reserva — a tela só esconde a área, mas quem cancela ou edita precisa enviar a senha correta em toda chamada
 - Filtros por carrinho e intervalo de datas
@@ -136,8 +141,11 @@ A URL permanece a mesma.
 | G | Status (`ativa` / `cancelada` / `devolvida`) |
 | H | Criado em (ISO) |
 | I | Devolvido em (ISO) |
+| J | Observação / Defeito reportado |
 
-A devolução é marcada automaticamente pelo servidor a cada consulta (`processAutoReturn`), com base no horário de devolução informado.
+A devolução é marcada automaticamente pelo servidor a cada consulta (`processAutoReturn`), com base no horário de devolução informado, **ou manualmente** pelo próprio professor na aba "Consulta por Professor" (botão **Finalizar Reserva**), que também permite relatar um defeito encontrado no notebook.
+
+> Planilhas criadas antes desta versão são atualizadas automaticamente: a coluna J é adicionada sozinha na primeira vez que o Apps Script acessar a aba `Reservas` depois do redeploy.
 
 ---
 

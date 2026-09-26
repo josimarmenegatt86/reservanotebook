@@ -46,6 +46,11 @@ function doPost(e) {
       if (erro) return jsonOk({ error: erro });
       return jsonOk({ ok: true });
     }
+    if (action === 'finalizar') {
+      const erro = finalizarReserva(body.id, body.observacao);
+      if (erro) return jsonOk({ error: erro });
+      return jsonOk({ ok: true });
+    }
     return jsonOk({ error: 'unknown_action: ' + action });
   } catch (err) {
     return jsonOk({ error: err.toString() });
@@ -76,12 +81,14 @@ function getSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
     _setupCabecalho(sheet);
+  } else {
+    _garantirColunaObservacao(sheet);
   }
   return sheet;
 }
 
 function _setupCabecalho(sheet) {
-  const cols = ['ID', 'Nome', 'Matrícula', 'Carrinho', 'Quantidade', 'Slots (JSON)', 'Status', 'Criado Em', 'Devolvido Em'];
+  const cols = ['ID', 'Nome', 'Matrícula', 'Carrinho', 'Quantidade', 'Slots (JSON)', 'Status', 'Criado Em', 'Devolvido Em', 'Observação / Defeito Reportado'];
   sheet.appendRow(cols);
   sheet.setFrozenRows(1);
   const hdr = sheet.getRange(1, 1, 1, cols.length);
@@ -98,6 +105,16 @@ function _setupCabecalho(sheet) {
   sheet.setColumnWidth(7, 90);
   sheet.setColumnWidth(8, 170);
   sheet.setColumnWidth(9, 170);
+  sheet.setColumnWidth(10, 320);
+}
+
+// Garante que planilhas criadas antes desta atualização recebam a coluna J.
+function _garantirColunaObservacao(sheet) {
+  if (sheet.getLastColumn() < 10) {
+    sheet.getRange(1, 10).setValue('Observação / Defeito Reportado');
+    sheet.getRange(1, 10).setBackground('#003087').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11);
+    sheet.setColumnWidth(10, 320);
+  }
 }
 
 function getFuncionariosSheet() {
@@ -151,7 +168,7 @@ function getAllReservas() {
   const sheet = getSheet();
   const lastRow = sheet.getLastRow();
   if (lastRow <= 1) return [];
-  return sheet.getRange(2, 1, lastRow - 1, 9).getValues()
+  return sheet.getRange(2, 1, lastRow - 1, 10).getValues()
     .filter(r => r[0] !== '')
     .map(row => ({
       id: String(row[0]),
@@ -163,6 +180,7 @@ function getAllReservas() {
       status: String(row[6]),
       criadoEm: row[7] ? String(row[7]) : '',
       devolvidoEm: row[8] ? String(row[8]) : null,
+      observacao: row[9] ? String(row[9]) : '',
     }));
 }
 
@@ -218,7 +236,7 @@ function criarReserva(r) {
   }
   getSheet().appendRow([
     r.id, r.nome, r.matricula, r.unidade, r.quantidade,
-    JSON.stringify(r.slots), 'ativa', r.criadoEm, '',
+    JSON.stringify(r.slots), 'ativa', r.criadoEm, '', '',
   ]);
   return null;
 }
@@ -281,6 +299,30 @@ function editarReserva(id, dados) {
   sheet.getRange(targetRow, 5).setValue(dados.quantidade);
   sheet.getRange(targetRow, 6).setValue(JSON.stringify(dados.slots));
   return null;
+}
+
+// O próprio professor confirma que finalizou o uso e devolveu o(s) notebook(s),
+// opcionalmente relatando algum defeito encontrado. Não exige senha de admin
+// porque é uma ação sobre a própria reserva ativa, mas só é permitida enquanto
+// a reserva ainda estiver 'ativa' (evita reabrir reservas já canceladas/devolvidas).
+function finalizarReserva(id, observacao) {
+  if (!id) return 'Reserva inválida.';
+  var obsTexto = observacao ? String(observacao).trim().slice(0, 500) : '';
+  var sheet = getSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return 'Reserva não encontrada.';
+  var rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(id)) {
+      if (rows[i][6] !== 'ativa') return 'Esta reserva já foi finalizada, devolvida ou cancelada anteriormente.';
+      var linha = i + 2;
+      sheet.getRange(linha, 7).setValue('devolvida');
+      sheet.getRange(linha, 9).setValue(new Date().toISOString());
+      if (obsTexto) sheet.getRange(linha, 10).setValue(obsTexto);
+      return null;
+    }
+  }
+  return 'Reserva não encontrada.';
 }
 
 function processAutoReturn() {
