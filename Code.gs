@@ -27,7 +27,10 @@ function doPost(e) {
     if (action === 'verificarSenha') {
       const correta = PropertiesService.getScriptProperties().getProperty('EXPORT_PASS') || '';
       if (!correta) return jsonOk({ error: 'Senha não configurada no servidor. Adicione a propriedade EXPORT_PASS nas configurações do projeto Apps Script.' });
-      return jsonOk({ ok: body.senha === correta });
+      if (body.senha !== correta) return jsonOk({ ok: false });
+      const token = Utilities.getUuid();
+      CacheService.getScriptCache().put('adm_' + token, '1', 1800);
+      return jsonOk({ ok: true, token: token });
     }
     if (action === 'criar') {
       const erro = criarReserva(body.reserva);
@@ -35,13 +38,13 @@ function doPost(e) {
       return jsonOk({ ok: true });
     }
     if (action === 'cancelar') {
-      if (!senhaValida(body.senha)) return jsonOk({ error: 'Senha de administrador inválida ou expirada.' });
+      if (!senhaValida(body.senha) && !tokenValida(body.token)) return jsonOk({ error: 'Sessão expirada. Faça login novamente no ADM.' });
       const erro = cancelarReserva(body.id);
       if (erro) return jsonOk({ error: erro });
       return jsonOk({ ok: true });
     }
     if (action === 'editar') {
-      if (!senhaValida(body.senha)) return jsonOk({ error: 'Senha de administrador inválida ou expirada.' });
+      if (!senhaValida(body.senha) && !tokenValida(body.token)) return jsonOk({ error: 'Sessão expirada. Faça login novamente no ADM.' });
       const erro = editarReserva(body.id, body.dados);
       if (erro) return jsonOk({ error: erro });
       return jsonOk({ ok: true });
@@ -62,6 +65,11 @@ function doPost(e) {
 function senhaValida(senha) {
   const correta = PropertiesService.getScriptProperties().getProperty('EXPORT_PASS') || '';
   return !!correta && senha === correta;
+}
+
+function tokenValida(token) {
+  if (!token) return false;
+  return CacheService.getScriptCache().get('adm_' + token) === '1';
 }
 
 function jsonOk(data) {
@@ -108,7 +116,6 @@ function _setupCabecalho(sheet) {
   sheet.setColumnWidth(10, 320);
 }
 
-// Garante que planilhas criadas antes desta atualização recebam a coluna J.
 function _garantirColunaObservacao(sheet) {
   if (sheet.getLastColumn() < 10) {
     sheet.getRange(1, 10).setValue('Observação / Defeito Reportado');
@@ -148,8 +155,6 @@ function listarFuncionarios() {
     }));
 }
 
-// Valida se o par nome + matrícula existe na aba Funcionarios.
-// Retorna null se válido, ou mensagem de erro.
 function validarFuncionario(nome, matricula) {
   if (!nome || !String(nome).trim()) return 'Nome inválido: selecione um funcionário da lista.';
   if (!matricula || String(matricula).trim() === '') return 'Matrícula inválida: informe a matrícula.';
@@ -301,10 +306,6 @@ function editarReserva(id, dados) {
   return null;
 }
 
-// O próprio professor confirma que finalizou o uso e devolveu o(s) notebook(s),
-// opcionalmente relatando algum defeito encontrado. Não exige senha de admin
-// porque é uma ação sobre a própria reserva ativa, mas só é permitida enquanto
-// a reserva ainda estiver 'ativa' (evita reabrir reservas já canceladas/devolvidas).
 function finalizarReserva(id, observacao) {
   if (!id) return 'Reserva inválida.';
   var obsTexto = observacao ? String(observacao).trim().slice(0, 500) : '';

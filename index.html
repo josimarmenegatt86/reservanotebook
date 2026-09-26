@@ -35,6 +35,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Consulta por Professor
     </button>
+    <button class="tab-btn" data-tab="adm" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      ADM
+    </button>
   </nav>
   <main class="main">
     <section id="tab-reservar" class="tab-content active" role="tabpanel">
@@ -262,6 +266,31 @@
         </button>
       </div>
       <div id="consulta-professor-resultado" aria-live="polite"></div>
+    </section>
+    <section id="tab-adm" class="tab-content" hidden role="tabpanel">
+      <div class="search-card">
+        <div class="search-eyebrow">
+          <span class="eyebrow-bar"></span>
+          <span>Área Restrita</span>
+        </div>
+        <h2>Acesso Administrativo</h2>
+        <p class="search-sub">Digite a senha de administrador para acessar o painel ADM.</p>
+        <div class="field-wrap" id="wrap-adm-senha">
+          <label for="adm-senha">Senha de Acesso</label>
+          <div class="password-wrap">
+            <input type="password" id="adm-senha" placeholder="Digite a senha" autocomplete="off">
+            <button type="button" class="btn-eye" id="btn-eye-adm" aria-label="Mostrar senha">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="error-text" id="err-adm-senha">Informe a senha.</div>
+        </div>
+        <div id="adm-login-erro"></div>
+        <button class="btn-buscar" id="btn-adm-acessar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Acessar
+        </button>
+      </div>
     </section>
   </main>
   <footer class="footer">

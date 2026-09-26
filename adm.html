@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel ADM — Reserva de Notebooks SENAI SC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" href="Logo-S.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo-wrap">
+        <img src="Logo-SENAI_EP.png" alt="SENAI" class="logo-img">
+      </div>
+      <div class="header-text">
+        <h1>Painel Administrativo</h1>
+        <p>SENAI Santa Catarina · Unidade Videira</p>
+      </div>
+    </div>
+  </header>
+  <nav class="nav-tabs" role="tablist" aria-label="Navegação">
+    <a class="tab-btn" href="index.html#reservar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Reservar
+    </a>
+    <a class="tab-btn" href="index.html#consultar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Consulta por Carrinho
+    </a>
+    <a class="tab-btn" href="index.html#consulta-professor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Consulta por Professor
+    </a>
+    <button class="tab-btn active" data-tab="reservas" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Reservas
+    </button>
+    <button class="tab-btn" data-tab="problemas" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      Problemas
+    </button>
+    <button class="tab-btn" data-tab="graficos" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      Utilização
+    </button>
+  </nav>
+  <main class="main">
+    <section id="tab-reservas" class="tab-content active" role="tabpanel">
+      <div class="search-card">
+        <div class="search-eyebrow">
+          <span class="eyebrow-bar"></span>
+          <span>Gerenciamento</span>
+        </div>
+        <h2>Alterar Reservas</h2>
+        <p class="search-sub">Edite períodos e quantidade ou cancele reservas ativas.</p>
+        <button class="btn-novo" id="btn-adm-logout">Encerrar sessão</button>
+      </div>
+      <div id="adm-reservas-lista" aria-live="polite"></div>
+    </section>
+    <section id="tab-problemas" class="tab-content" hidden role="tabpanel">
+      <div class="search-card">
+        <div class="search-eyebrow">
+          <span class="eyebrow-bar"></span>
+          <span>Relação de Problemas</span>
+        </div>
+        <h2>Defeitos Reportados</h2>
+        <p class="search-sub">Reservas finalizadas com defeito relatado nos notebooks.</p>
+      </div>
+      <div id="adm-problemas-lista" aria-live="polite"></div>
+    </section>
+    <section id="tab-graficos" class="tab-content" hidden role="tabpanel">
+      <div class="search-card">
+        <div class="search-eyebrow">
+          <span class="eyebrow-bar"></span>
+          <span>Utilização</span>
+        </div>
+        <h2>Gráficos de Utilização</h2>
+        <p class="search-sub">Pico de notebooks em uso por dia no mês atual e reservas criadas por mês.</p>
+      </div>
+      <div id="adm-stats" class="adm-stats"></div>
+      <div id="adm-graficos"></div>
+      <div id="adm-graficos-mensais"></div>
+    </section>
+  </main>
+  <footer class="footer">
+    <p>SENAI Santa Catarina · Unidade Videira — Painel ADM</p>
+  </footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="adm.js"></script>
+</body>
+</html>

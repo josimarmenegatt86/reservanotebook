@@ -8,6 +8,7 @@ const CACHE_TTL = 30_000;
 let _apiOnline = null;
 let _apiErro = '';
 let _funcionarios = [];
+
 async function fetchAll(force = false) {
   if (!force && _cache !== null && Date.now() - _cacheTime < CACHE_TTL) return _cache;
   if (!API_URL) {
@@ -51,6 +52,7 @@ async function fetchAll(force = false) {
     return _cache;
   }
 }
+
 async function fetchFuncionarios(force = false) {
   if (!force && _funcionarios.length > 0) return _funcionarios;
   if (!API_URL) return _funcionarios;
@@ -65,6 +67,7 @@ async function fetchFuncionarios(force = false) {
   }
   return _funcionarios;
 }
+
 function _popularSelectFuncionarios() {
   const opts = _funcionarios
     .slice()
@@ -94,6 +97,7 @@ function _popularSelectFuncionarios() {
     if (cur) selProf.value = cur;
   }
 }
+
 function validarMatriculaFuncionario(nome, matricula) {
   if (_funcionarios.length === 0) return null;
   const nomeNorm = String(nome).trim().toLowerCase();
@@ -103,9 +107,11 @@ function validarMatriculaFuncionario(nome, matricula) {
   if (f.matricula !== matNorm) return 'Matrícula não corresponde ao funcionário selecionado.';
   return null;
 }
+
 function getAll() {
   return _cache ?? JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
 }
+
 async function saveReserva(reserva) {
   if (!API_URL) {
     const list = getAll();
@@ -140,6 +146,7 @@ async function saveReserva(reserva) {
   _apiOnline = true;
   return data;
 }
+
 function _autoReturnLocal() {
   const now = new Date();
   const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
@@ -155,10 +162,12 @@ function _autoReturnLocal() {
   });
   if (changed) localStorage.setItem(STORE_KEY, JSON.stringify(list));
 }
+
 function overlaps(slotA, slotB) {
   return parseLocal(slotA.retirada) < parseLocal(slotB.devolucao) &&
          parseLocal(slotB.retirada) < parseLocal(slotA.devolucao);
 }
+
 function getDisp(carrinho, slot) {
   const usado = getAll()
     .filter(r => r.status === 'ativa' && r.unidade === carrinho)
@@ -166,6 +175,7 @@ function getDisp(carrinho, slot) {
     .reduce((n, r) => n + r.quantidade, 0);
   return MAX_NB - usado;
 }
+
 function peakUsage(carrinho, dateISO) {
   const dayStart = parseLocal(dateISO + 'T00:00');
   const dayEnd = parseLocal(dateISO + 'T23:59');
@@ -191,6 +201,7 @@ function peakUsage(carrinho, dateISO) {
   });
   return peak;
 }
+
 function findNearbyDates(carrinho, slot, quantidade, maxResults = 3) {
   const retStart = parseLocal(slot.retirada);
   const devEnd = parseLocal(slot.devolucao);
@@ -216,48 +227,59 @@ function findNearbyDates(carrinho, slot, quantidade, maxResults = 3) {
   }
   return suggestions;
 }
+
 function parseLocal(str) {
   const [d, t = '00:00'] = String(str).split('T');
   const [y, mo, dy] = d.split('-').map(Number);
   const [h, mi = 0] = t.split(':').map(Number);
   return new Date(y, mo - 1, dy, h, mi, 0);
 }
+
 function toISOLocal(d) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
 function todayISO() { return toISOLocal(new Date()).slice(0, 10); }
 function pad(n) { return String(n).padStart(2, '0'); }
+
 function fmtTime(iso) {
   const d = parseLocal(iso);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
 function fmtDateShort(iso) {
   const d = parseLocal(iso);
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)}`;
 }
+
 function fmtDatetime(iso) {
   return `${fmtDateShort(iso)} ${fmtTime(iso)}h`;
 }
+
 function fmtDateTimeFull(isoZ) {
   if (!isoZ) return '';
   const d = new Date(isoZ);
   if (isNaN(d)) return String(isoZ);
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
+
 function maskName(nome) {
   return nome.trim().split(/\s+/).map((p, i) => {
     const keep = i === 0 ? 2 : 1;
     return p.slice(0, keep) + '*'.repeat(Math.max(1, p.length - keep));
   }).join(' ');
 }
+
 function getInitials(nome) {
   const parts = nome.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+
 let _toastTimer;
 function toast(msg, type = '') {
   const el = document.getElementById('toast');
@@ -266,21 +288,26 @@ function toast(msg, type = '') {
   el.className = `toast ${type ? 'toast-' + type : ''} show`;
   _toastTimer = setTimeout(() => { el.className = 'toast'; }, 3400);
 }
+
 function fieldError(wrapId, errId, msg) {
   const wrap = document.getElementById(wrapId);
   const err = document.getElementById(errId);
   if (wrap) wrap.classList.add('has-error');
   if (err && msg) err.textContent = msg;
 }
+
 function fieldClear(wrapId) {
   document.getElementById(wrapId)?.classList.remove('has-error');
 }
+
 function clearAllErrors() {
   ['wrap-nome','wrap-matricula','wrap-unidade','wrap-quantidade','wrap-slots']
     .forEach(id => fieldClear(id));
   document.querySelectorAll('.slot-row').forEach(r => r.classList.remove('slot-error'));
 }
+
 let _slotCounter = 0;
+
 function addSlotRow(opts = {}) {
   _slotCounter++;
   const today = todayISO();
@@ -322,6 +349,7 @@ function addSlotRow(opts = {}) {
   document.getElementById('slot-list').appendChild(row);
   updateQtyHint();
 }
+
 function getSlotValues() {
   return Array.from(document.querySelectorAll('.slot-row')).map(row => {
     const dataRet = row.querySelector('.slot-data-ret').value;
@@ -336,6 +364,7 @@ function getSlotValues() {
     };
   });
 }
+
 function updateQtyHint() {
   const hint = document.getElementById('qty-hint');
   const qtyInput = document.getElementById('quantidade');
@@ -360,6 +389,7 @@ function updateQtyHint() {
     hint.className = 'qty-hint qty-ok';
   }
 }
+
 function initReservar() {
   const qtyInput = document.getElementById('quantidade');
   document.getElementById('qty-minus').addEventListener('click', () => {
@@ -403,8 +433,10 @@ function initReservar() {
   });
   initRecorrente();
 }
+
 const MAX_SLOTS_RECORRENTE = 60;
 const _recDiasSelecionados = new Set();
+
 function initRecorrente() {
   const panel = document.getElementById('recorrente-panel');
   document.getElementById('btn-toggle-recorrente').addEventListener('click', () => {
@@ -425,6 +457,7 @@ function initRecorrente() {
   });
   document.getElementById('btn-gerar-recorrente').addEventListener('click', gerarPeriodosRecorrentes);
 }
+
 function resetRecorrente() {
   document.getElementById('recorrente-panel').hidden = true;
   document.getElementById('rec-inicio').value = '';
@@ -435,6 +468,7 @@ function resetRecorrente() {
   document.querySelectorAll('.weekday-btn.active').forEach(b => b.classList.remove('active'));
   _recDiasSelecionados.clear();
 }
+
 function gerarPeriodosRecorrentes() {
   const hint = document.getElementById('rec-hint');
   const inicio = document.getElementById('rec-inicio').value;
@@ -472,6 +506,7 @@ function gerarPeriodosRecorrentes() {
   document.getElementById('recorrente-panel').hidden = true;
   updateQtyHint();
 }
+
 async function handleSubmit(e) {
   e.preventDefault();
   clearAllErrors();
@@ -566,9 +601,11 @@ async function handleSubmit(e) {
     btn.innerHTML = _btnReservarLabel();
   }
 }
+
 function _btnReservarLabel() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Confirmar Reserva`;
 }
+
 function showSuggestions(conflictSlot, disp, suggestions, quantidade) {
   const box = document.getElementById('suggestion-box');
   const header = `<div class="suggestion-title">
@@ -605,6 +642,7 @@ function showSuggestions(conflictSlot, disp, suggestions, quantidade) {
     });
   });
 }
+
 function showConfirmation(reserva) {
   document.getElementById('form-section').hidden = true;
   document.getElementById('confirmacao').hidden = false;
@@ -627,12 +665,14 @@ function showConfirmation(reserva) {
   toast('Reserva realizada com sucesso!', 'success');
   renderSituacao();
 }
+
 function initConsultar() {
   const now = new Date();
   document.getElementById('cons-mes').value =
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
   document.getElementById('btn-consultar').addEventListener('click', renderConsulta);
 }
+
 async function renderConsulta() {
   const btn = document.getElementById('btn-consultar');
   btn.disabled = true;
@@ -738,6 +778,7 @@ async function renderConsulta() {
   }
   btn.disabled = false;
 }
+
 function getWeekdays(year, month) {
   const days = [];
   const total = new Date(year, month, 0).getDate();
@@ -747,6 +788,7 @@ function getWeekdays(year, month) {
   }
   return days;
 }
+
 function _updateApiStatusEl() {
   const el = document.getElementById('api-status');
   if (!el) return;
@@ -757,6 +799,7 @@ function _updateApiStatusEl() {
     el.hidden = true;
   }
 }
+
 async function renderSituacao() {
   const container = document.getElementById('situacao-cards');
   if (!container) return;
@@ -849,12 +892,15 @@ async function renderSituacao() {
     </div>`;
   }
 }
+
 function initConsultaProfessor() {
   document.getElementById('btn-consulta-professor').addEventListener('click', renderConsultaProfessor);
 }
+
 function _consultaProfessorLabel() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Buscar Reservas`;
 }
+
 async function renderConsultaProfessor() {
   const btn = document.getElementById('btn-consulta-professor');
   btn.disabled = true;
@@ -898,6 +944,7 @@ async function renderConsultaProfessor() {
   btn.disabled = false;
   btn.innerHTML = _consultaProfessorLabel();
 }
+
 function profItemHTML(r) {
   const slotsHtml = r.slots.map(s =>
     `<span class="slot-time-badge">${fmtDatetime(s.retirada)} → ${fmtTime(s.devolucao)}h</span>`
@@ -918,11 +965,13 @@ function profItemHTML(r) {
     <div class="ger-item-actions">${statusBadge(r.status)}${btnFinalizar}</div>
   </div>`;
 }
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = String(str);
   return div.innerHTML;
 }
+
 function statusBadge(status) {
   const map = {
     ativa: '<span class="status-pill status-confirmado">Ativa</span>',
@@ -931,6 +980,7 @@ function statusBadge(status) {
   };
   return map[status] || `<span class="status-pill status-pendente">${status}</span>`;
 }
+
 // ── Finalizar Reserva (professor confirma devolução e pode reportar defeito) ──
 function initFinalizarReserva() {
   document.getElementById('consulta-professor-resultado').addEventListener('click', (ev) => {
@@ -941,6 +991,7 @@ function initFinalizarReserva() {
     abrirModalFinalizar(reserva);
   });
 }
+
 function abrirModalFinalizar(reserva) {
   fecharModalFinalizar();
   const slotsResumo = reserva.slots.map(s =>
@@ -982,10 +1033,12 @@ function abrirModalFinalizar(reserva) {
   wrap.addEventListener('click', (ev) => { if (ev.target === wrap) fecharModalFinalizar(); });
   document.getElementById('modal-finalizar-confirmar').addEventListener('click', () => confirmarFinalizacao(reserva.id));
 }
+
 function fecharModalFinalizar() {
   const el = document.getElementById('modal-finalizar');
   if (el) el.remove();
 }
+
 async function confirmarFinalizacao(id) {
   const btn = document.getElementById('modal-finalizar-confirmar');
   const observacao = document.getElementById('finalizar-observacao').value.trim();
@@ -1002,6 +1055,7 @@ async function confirmarFinalizacao(id) {
   toast(observacao ? 'Reserva finalizada — defeito registrado.' : 'Reserva finalizada com sucesso!', 'success');
   await renderConsultaProfessor();
 }
+
 async function finalizarReserva(id, observacao) {
   if (!API_URL) {
     const list = getAll();
@@ -1030,6 +1084,52 @@ async function finalizarReserva(id, observacao) {
     return { error: 'Falha de conexão ao finalizar a reserva. Tente novamente.' };
   }
 }
+
+// ── ADM: login com senha validada no servidor (token temporário) ──
+function initAdm() {
+  const input = document.getElementById('adm-senha');
+  document.getElementById('btn-eye-adm').addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  });
+  input.addEventListener('input', () => fieldClear('wrap-adm-senha'));
+  document.getElementById('btn-adm-acessar').addEventListener('click', acessarAdm);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') acessarAdm(); });
+}
+
+async function acessarAdm() {
+  const senha = document.getElementById('adm-senha').value;
+  const erroBox = document.getElementById('adm-login-erro');
+  erroBox.innerHTML = '';
+  if (!senha) {
+    fieldError('wrap-adm-senha', 'err-adm-senha', 'Informe a senha.');
+    return;
+  }
+  const btn = document.getElementById('btn-adm-acessar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-btn"></span> Verificando…';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'verificarSenha', senha }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      erroBox.innerHTML = `<div class="error-msg">${escapeHtml(data.error)}</div>`;
+    } else if (data.ok && data.token) {
+      sessionStorage.setItem('adm_token', data.token);
+      window.location.href = 'adm.html';
+      return;
+    } else {
+      erroBox.innerHTML = '<div class="error-msg">Senha incorreta.</div>';
+    }
+  } catch {
+    erroBox.innerHTML = '<div class="error-msg">Falha de conexão com o servidor.</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Acessar';
+}
+
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1046,12 +1146,14 @@ function initTabs() {
     });
   });
 }
+
 document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initReservar();
   initConsultar();
   initConsultaProfessor();
   initFinalizarReserva();
+  initAdm();
   await fetchAll();
   await fetchFuncionarios();
   _popularSelectFuncionarios();
