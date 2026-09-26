@@ -79,8 +79,10 @@ function _popularSelectFuncionarios() {
   }
   const selProf = document.getElementById('prof-nome');
   if (selProf) {
-    // Somente funcionários que já possuem ao menos uma reserva registrada
-    const nomesComReserva = new Set(getAll().map(r => r.nome.trim().toLowerCase()));
+    // Somente funcionários que possuem ao menos uma reserva ainda ativa
+    const nomesComReserva = new Set(
+      getAll().filter(r => r.status === 'ativa').map(r => r.nome.trim().toLowerCase())
+    );
     const optsProf = _funcionarios
       .filter(f => nomesComReserva.has(f.nome.trim().toLowerCase()))
       .slice()
@@ -1057,5 +1059,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSituacao();
   setInterval(() => {
     fetchAll(true).then(() => renderSituacao());
-  }, 60_000);
+  }, 30_000);
 });
