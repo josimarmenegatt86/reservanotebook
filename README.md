@@ -29,7 +29,7 @@ Sistema web de reserva de notebooks para a unidade Videira do SENAI SC. Permite 
 - Cards dos 2 carrinhos na primeira página, sempre visíveis
 - Mostra notebooks em uso no momento e reservas do dia que ainda não iniciaram
 - Barra de uso visual com percentual
-- Atualização automática a cada 60 segundos
+- Atualização automática a cada 30 segundos
 - Exibe aviso quando a conexão com a planilha falha
 
 ### Consultar
